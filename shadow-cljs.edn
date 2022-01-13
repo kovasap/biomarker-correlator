@@ -1,6 +1,7 @@
 {:source-paths ["src"]
  :dependencies [[binaryage/devtools "1.0.3"]
                 [nrepl "0.8.3"]
+                [cljfmt "0.8.0"]
                 [kixi/stats "0.5.4"]
                 [cljs-http "0.1.46"]
                 [reagent "1.1.0"]]
@@ -9,7 +10,11 @@
                       :asset-path "/js"
                       :modules    {:app {:entries [app.core
                                                    app.submodule]}}
-                      :devtools   {:after-load app.core/mount-root}}}
+                      :devtools   {:after-load app.core/mount-root}}
+                :test {:target :node-test
+                       :output-to "out/node-tests.js"
+                       ;; :ns-regexp "-spec$"
+                       :autorun true}}
 
  :dev-http     {3000 {:root    "public"
                       :handler user/app}}}

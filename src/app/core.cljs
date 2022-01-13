@@ -10,7 +10,6 @@
    [reagent.core :as r]
    [reagent.dom :as d]))
 
-
 (def app-state (r/atom {:input-data [{}]
                         :biomarker-data [{}]}))
 
@@ -22,7 +21,6 @@
 (s/def :bc/dated-row (s/keys :req [:bc/date]))
 
 (s/def :bc/dated-rows (fn [input] every? #(s/valid? :bc/dated-row %) input))
-
 
 ;; -------- Data "Uploading" --------------------------------------------
 ;; From https://mrmcc3.github.io/blog/posts/csv-with-clojurescript/ 
@@ -36,14 +34,13 @@
 
 (defn my-parse-csv [csv-data]
   (js->clj
-    (parse-csv csv-data (clj->js {:columns true
-                                  :skip_empty_lines true
-                                  :trim true}))
-    :keywordize-keys true))
+   (parse-csv csv-data (clj->js {:columns true
+                                 :skip_empty_lines true
+                                 :trim true}))
+   :keywordize-keys true))
 
 (def extract-result
   (map #(-> % .-target .-result my-parse-csv)))
-
 
 ;; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec
@@ -51,15 +48,13 @@
   {:pre [(s/valid? :bc/dated-rows rows)]}
   (into (sorted-map) (map (fn [row] [(:date row) row]) rows)))
 
-
 (defn merge-rows-using-dates [rows1 rows2]
   {:pre [(s/valid? :bc/dated-rows rows1)
          (s/valid? :bc/dated-rows rows2)]
    :post [(s/valid? :bc/dated-rows %)]}
   (vals (merge-with (fn [row1 row2] (merge row1 row2))
                     (get-rows-by-dates rows1) (get-rows-by-dates rows2))))
-  
-  
+
 ;; Input data file
 
 (def input-upload-reqs (chan 1 first-file))
@@ -94,7 +89,6 @@
   (swap! app-state assoc :biomarker-data (<! biomarker-file-reads))
   (recur))
 
-
 (defn upload-btn [file-name upload-reqs-channel]
   [:span.upload-label
    [:label.file-label
@@ -104,25 +98,22 @@
      [:span.file-icon
       [:i.fa.fa-upload.fa-lg]]
      [:span.file-label (or file-name "Choose a file...")]]]])
-    ;; Adds an "X" that can be clicked to clear the selected file.
-    ;; (when file-name 
+     ;; Adds an "X" that can be clicked to clear the selected file.
+     ;; (when file-name 
     ;;   [:i.fa.fa-times {:on-click #(reset! app-state {})}]]]]])
 
 ;; ----------------------------------------------------
 
 ; model is [offset slope]
 (defn compute-linear-estimate [model input]
-  (prn "model" model)
+  (prn "model" (.stringify js/JSON model))
   (let [offset (first model)
         slope (last model)]
     (+ offset (* slope input))))
-  
 
-; TODO use tests to figure out why this isn't working
-; https://shadow-cljs.github.io/docs/UsersGuide.html#_testing
 (defn compute-correlation [var1 var2 data]
   (let [result (transduce identity (kixi/simple-linear-regression var1 var2) data)
-        error (transduce identity (kixi/standard-error var1 var2) data)
+        error (transduce identity (kixi/regression-standard-error var1 var2) data)
         ; To compute r-squared, we need to compare each value in data for var2
         ; to the value we would expected to get for var2 if we plugged var1
         ; into our linear model (computed by kixi/simple-linear-regression)
@@ -135,7 +126,6 @@
     (prn "Computing correlation between " var1 " and " var2 " gives " result
          " with error " error " and r-squared " rsq)
     result))
-  
 
 (defn compute-correlations [input-data biomarker-data]
   (prn input-data)
@@ -149,7 +139,6 @@
     (prn (stringify-csv (clj->js results)))
     [:div "Results"]))
 
-
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
          :as state} @app-state]
@@ -157,7 +146,6 @@
      [:div.topbar.hidden-print [upload-btn input-file-name input-upload-reqs]]
      [:div.topbar.hidden-print [upload-btn biomarker-file-name biomarker-upload-reqs]]
      [compute-correlations input-data biomarker-data]]))
-
 
 ;; -------------------------
 ;; Initialize app

@@ -11,14 +11,18 @@ We want to make
 ## Development Commands
 
 ### Development mode
+
+Run the app:
 ```
 npm install
 npx shadow-cljs watch app
 ```
-start a ClojureScript REPL
+
+Run tests:
 ```
-npx shadow-cljs browser-repl
+npx shadow-cljs compile test && node out/node-tests.js
 ```
+
 ### Building for production
 
 ```
