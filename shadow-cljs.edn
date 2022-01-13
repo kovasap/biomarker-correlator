@@ -11,10 +11,10 @@
                       :modules    {:app {:entries [app.core
                                                    app.submodule]}}
                       :devtools   {:after-load app.core/mount-root}}
-                :test {:target :node-test
-                       :output-to "out/node-tests.js"
-                       ;; :ns-regexp "-spec$"
-                       :autorun true}}
+                :test {:target :browser-test
+                       :test-dir "out/test"
+                       :ns-regexp "test"}}
 
- :dev-http     {3000 {:root    "public"
+ :dev-http     {8021 "out/test"
+                3000 {:root    "public"
                       :handler user/app}}}

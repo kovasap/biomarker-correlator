@@ -18,9 +18,9 @@ npm install
 npx shadow-cljs watch app
 ```
 
-Run tests:
+Run tests (results should appear in the browser at localhost:8021):
 ```
-npx shadow-cljs compile test && node out/node-tests.js
+npx shadow-cljs watch test
 ```
 
 ### Building for production
