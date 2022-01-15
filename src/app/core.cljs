@@ -151,7 +151,8 @@
         merged-data (merge-rows-using-dates input-data biomarker-data)
         results (for [input input-vars biomarker biomarker-vars]
                   (conj
-                   {"Input" input "Biomarker" biomarker}
+                   {"Input" input "Biomarker" biomarker
+                    "Datapoints" (count merged-data)}
                    (calc-linear-regression input biomarker merged-data)))]
     results))
 
@@ -171,8 +172,18 @@
          :as state} @app-state
         correlation-results (compute-correlations input-data biomarker-data)]
     [:div.app.content
-     [:div.topbar.hidden-print [upload-btn input-file-name input-upload-reqs]]
-     [:div.topbar.hidden-print [upload-btn biomarker-file-name biomarker-upload-reqs]]
+     [:h1.title "Biomarker Correlator"]
+     [:p "This application calculates cross correlations between inputs and
+      biomarkers in an attempt to identify statistically significant
+      correlations. "]
+     [:p "Despite presenting like a website, there is no server
+      behind this app that data is sent to for analysis; everything is done
+      client side in the browser. Therefore, it can be saved and run offline as
+      needed."]
+     [:div.topbar.hidden-print "\"Upload\" input data"
+      [upload-btn input-file-name input-upload-reqs]]
+     [:div.topbar.hidden-print "\"Upload\" biomarker data"
+      [upload-btn biomarker-file-name biomarker-upload-reqs]]
      (correlation-results-to-html correlation-results)]))
 
 ;; -------------------------
