@@ -6,7 +6,8 @@
    [cljs.spec.alpha :as s]
    ["csv-parse/lib/sync" :rename {parse parse-csv}]
    ["csv-stringify/lib/sync" :rename {stringify stringify-csv}]
-   [kixi.stats.core :as kixi]
+   [kixi.stats.core :as kixi-c]
+   [kixi.stats.protocols :as kixi-p]
    [reagent.core :as r]
    [reagent.dom :as d]))
 
@@ -106,26 +107,41 @@
 
 ; model is [offset slope]
 (defn compute-linear-estimate [model input]
-  (prn "model" (.stringify js/JSON model))
-  (let [offset (first model)
-        slope (last model)]
+  ; (prn "model" (.stringify js/JSON model))
+  (prn "params" (kixi-p/parameters model))
+  (let [params (kixi-p/parameters model)
+        offset (first params)
+        slope (last params)]
     (+ offset (* slope input))))
 
-(defn compute-correlation [var1 var2 data]
-  (let [result (transduce identity (kixi/simple-linear-regression var1 var2) data)
-        error (transduce identity (kixi/regression-standard-error var1 var2) data)
-        ; To compute r-squared, we need to compare each value in data for var2
-        ; to the value we would expected to get for var2 if we plugged var1
-        ; into our linear model (computed by kixi/simple-linear-regression)
-        ; To do this, we need to pass in to kixi/r-squared: 
-        ;   1. a function that takes in a data entry, plugs var1 into the linear
-        ;      model, and returns the var2 value according to the model
-        ;   2. a function that takes in a data entry and returns the actual
-        ;      var2 value
-        rsq (transduce identity (kixi/r-squared #(compute-linear-estimate result (var1 %)) var2) data)]
+(defn calc-rsq [linear-model var1 var2 data]
+  ; To compute r-squared, we need to compare each value in data for var2
+  ; to the value we would expected to get for var2 if we plugged var1
+  ; into our linear model (computed by kixi/simple-linear-regression)
+  ; To do this, we need to pass in to kixi/r-squared: 
+  ;   1. a function that takes in a data entry, plugs var1 into the linear
+  ;      model, and returns the var2 value according to the model
+  ;   2. a function that takes in a data entry and returns the actual
+  ;      var2 value
+  (prn linear-model)
+  (if (nil? linear-model)
+    nil
+    (transduce
+     identity (kixi-c/r-squared
+               #(compute-linear-estimate linear-model (var1 %))
+               var2)
+     data)))
+
+(defn calc-linear-regression [var1 var2 data]
+  (let [result (transduce identity (kixi-c/simple-linear-regression var1 var2) data)
+        error (transduce identity (kixi-c/regression-standard-error var1 var2) data)
+        rsq (calc-rsq result var1 var2 data)]
     (prn "Computing correlation between " var1 " and " var2 " gives " result
          " with error " error " and r-squared " rsq)
-    result))
+    {:slope (if (nil? result)
+              nil
+              (last (kixi-p/parameters result)))
+     :rsq rsq}))
 
 (defn compute-correlations [input-data biomarker-data]
   (prn input-data)
@@ -134,18 +150,30 @@
         biomarker-vars (filter #(not= % :date) (keys (first biomarker-data)))
         merged-data (merge-rows-using-dates input-data biomarker-data)
         results (for [input input-vars biomarker biomarker-vars]
-                  [input biomarker (compute-correlation input biomarker merged-data)])]
-    (prn results)
-    (prn (stringify-csv (clj->js results)))
-    [:div "Results"]))
+                  (conj
+                   {"Input" input "Biomarker" biomarker}
+                   (calc-linear-regression input biomarker merged-data)))]
+    results))
+
+(defn correlation-results-to-csv [results]
+  (stringify-csv (clj->js results)))
+
+(defn correlation-results-to-html [results]
+  [:table
+   [:tr (for [key (keys (first results))]
+          [:th key])]
+   (for [result results]
+     [:tr (for [r (vals result)]
+            [:td r])])])
 
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
-         :as state} @app-state]
-    [:div.app
+         :as state} @app-state
+        correlation-results (compute-correlations input-data biomarker-data)]
+    [:div.app.content
      [:div.topbar.hidden-print [upload-btn input-file-name input-upload-reqs]]
      [:div.topbar.hidden-print [upload-btn biomarker-file-name biomarker-upload-reqs]]
-     [compute-correlations input-data biomarker-data]]))
+     (correlation-results-to-html correlation-results)]))
 
 ;; -------------------------
 ;; Initialize app
