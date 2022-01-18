@@ -48,6 +48,8 @@
 ;; TODO figure out how to express this in spec
 (defn get-rows-by-dates [rows]
   {:pre [(s/valid? :bc/dated-rows rows)]}
+  ; TODO find out how to get spec to do this assert for me
+  ; (assert (:date (first rows)))
   (into (sorted-map) (map (fn [row] [(:date row) row]) rows)))
 
 (defn merge-rows-using-dates [rows1 rows2]
@@ -108,8 +110,6 @@
 
 ; model is [offset slope]
 (defn compute-linear-estimate [model input]
-  ; (prn "model" (.stringify js/JSON model))
-  (prn "params" (kixi-p/parameters model))
   (let [params (kixi-p/parameters model)
         offset (first params)
         slope (last params)]
@@ -137,15 +137,20 @@
   "Remove maps from data (collection of maps) for which any of the given keys
   are not present or have nil values."
   [data & ks]
-  (filter (fn [datum] (every? #(not (st/blank? (% datum))) ks)) data))
+  (filter (fn [datum] (every? #(not (st/blank? (% datum))) ks))
+          data))
 
 (defn round [n]
   (/ (Math/round (* 1000 (+ n (. js/Number -EPSILON)))) 1000))
 
 (defn calc-linear-regression [var1 var2 data]
   (let [cleaned-data (filter-missing data var1 var2)
-        result (transduce identity (kixi-c/simple-linear-regression var1 var2) cleaned-data)
-        error (transduce identity (kixi-c/regression-standard-error var1 var2) cleaned-data)
+        result (transduce identity
+                          (kixi-c/simple-linear-regression var1 var2)
+                          cleaned-data)
+        error (transduce identity
+                         (kixi-c/regression-standard-error var1 var2)
+                         cleaned-data)
         rsq (calc-rsq result var1 var2 cleaned-data)]
     ; (prn "Computing correlation between " var1 " and " var2 " gives " result
     ;      " with error " error " and r-squared " rsq]
@@ -155,8 +160,6 @@
      :rsq (round rsq)}))
 
 (defn compute-correlations [input-data biomarker-data]
-  (prn input-data)
-  (prn biomarker-data)
   (let [input-vars (filter #(not= % :date) (keys (first input-data)))
         biomarker-vars (filter #(not= % :date) (keys (first biomarker-data)))
         merged-data (merge-rows-using-dates input-data biomarker-data)
@@ -168,12 +171,20 @@
 
 (defn single-biomarker-row [result-row]
   {:input (:input result-row)
-   (keyword (st/join [(:biomarker result-row) "-slope"])) (:slope result-row)
-   (keyword (st/join [(:biomarker result-row) "-rsq"])) (:rsq result-row)
-   (keyword (st/join [(:biomarker result-row) "-datapoints"])) (:datapoints result-row)})
+   (keyword (st/join [(name (:biomarker result-row)) "-slope"])) (:slope result-row)
+   (keyword (st/join [(name (:biomarker result-row)) "-rsq"])) (:rsq result-row)
+   (keyword (st/join [(name (:biomarker result-row)) "-datapoints"])) (:datapoints result-row)})
 
 (defn get-per-input-row [same-input-results]
-  (reduce merge (map single-biomarker-row same-input-results)))
+  ; Sort row so that :input is first, then biomarkers are in alphabetical order
+  ; TODO WHY DOESNT THIS WORK????
+  (let [merged-map
+        (reduce merge (map single-biomarker-row same-input-results))
+        sorted
+        (into (sorted-map-by #(if (= % :input) "aaaaa" (name %))) merged-map)]
+    (prn "MERGED " merged-map)
+    (prn "SORTED " sorted)
+    sorted))
 
 (defn make-per-input-correlation-results
   "Collection of maps with keys like:
@@ -197,6 +208,7 @@
   See https://stackoverflow.com/a/33458370 for ^{:key} map explanation.
   "
   [maps]
+  (prn (first maps))
   [:table
    ^{:key (random-uuid)} [:tr (for [key (keys (first maps))]
                                 ^{:key (random-uuid)} [:th key])]
