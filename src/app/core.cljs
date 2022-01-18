@@ -4,6 +4,7 @@
    [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
    [cljs.core.async :refer-macros [go go-loop alt!]]
    [cljs.spec.alpha :as s]
+   [clojure.string :as st]
    ["csv-parse/lib/sync" :rename {parse parse-csv}]
    ["csv-stringify/lib/sync" :rename {stringify stringify-csv}]
    [kixi.stats.core :as kixi-c]
@@ -114,16 +115,16 @@
         slope (last params)]
     (+ offset (* slope input))))
 
-(defn calc-rsq [linear-model var1 var2 data]
-  ; To compute r-squared, we need to compare each value in data for var2
-  ; to the value we would expected to get for var2 if we plugged var1
-  ; into our linear model (computed by kixi/simple-linear-regression)
-  ; To do this, we need to pass in to kixi/r-squared: 
-  ;   1. a function that takes in a data entry, plugs var1 into the linear
-  ;      model, and returns the var2 value according to the model
-  ;   2. a function that takes in a data entry and returns the actual
-  ;      var2 value
-  (prn linear-model)
+(defn calc-rsq
+  "To compute r-squared, we need to compare each value in data for var2
+  to the value we would expected to get for var2 if we plugged var1
+  into our linear model (computed by kixi/simple-linear-regression)
+  To do this, we need to pass in to kixi/r-squared: 
+    1. a function that takes in a data entry, plugs var1 into the linear
+       model, and returns the var2 value according to the model
+    2. a function that takes in a data entry and returns the actual
+       var2 value"
+  [linear-model var1 var2 data]
   (if (nil? linear-model)
     nil
     (transduce
@@ -132,16 +133,26 @@
                var2)
      data)))
 
+(defn filter-missing
+  "Remove maps from data (collection of maps) for which any of the given keys
+  are not present or have nil values."
+  [data & ks]
+  (filter (fn [datum] (every? #(not (st/blank? (% datum))) ks)) data))
+
+(defn round [n]
+  (/ (Math/round (* 1000 (+ n (. js/Number -EPSILON)))) 1000))
+
 (defn calc-linear-regression [var1 var2 data]
-  (let [result (transduce identity (kixi-c/simple-linear-regression var1 var2) data)
-        error (transduce identity (kixi-c/regression-standard-error var1 var2) data)
-        rsq (calc-rsq result var1 var2 data)]
-    (prn "Computing correlation between " var1 " and " var2 " gives " result
-         " with error " error " and r-squared " rsq)
-    {:slope (if (nil? result)
-              nil
-              (last (kixi-p/parameters result)))
-     :rsq rsq}))
+  (let [cleaned-data (filter-missing data var1 var2)
+        result (transduce identity (kixi-c/simple-linear-regression var1 var2) cleaned-data)
+        error (transduce identity (kixi-c/regression-standard-error var1 var2) cleaned-data)
+        rsq (calc-rsq result var1 var2 cleaned-data)]
+    ; (prn "Computing correlation between " var1 " and " var2 " gives " result
+    ;      " with error " error " and r-squared " rsq]
+    {:datapoints (count cleaned-data)
+     :slope (round (if (nil? result) nil
+                       (last (kixi-p/parameters result))))
+     :rsq (round rsq)}))
 
 (defn compute-correlations [input-data biomarker-data]
   (prn input-data)
@@ -151,21 +162,47 @@
         merged-data (merge-rows-using-dates input-data biomarker-data)
         results (for [input input-vars biomarker biomarker-vars]
                   (conj
-                   {"Input" input "Biomarker" biomarker
-                    "Datapoints" (count merged-data)}
+                   {:input input :biomarker biomarker}
                    (calc-linear-regression input biomarker merged-data)))]
     results))
 
-(defn correlation-results-to-csv [results]
-  (stringify-csv (clj->js results)))
+(defn single-biomarker-row [result-row]
+  {:input (:input result-row)
+   (keyword (st/join [(:biomarker result-row) "-slope"])) (:slope result-row)
+   (keyword (st/join [(:biomarker result-row) "-rsq"])) (:rsq result-row)
+   (keyword (st/join [(:biomarker result-row) "-datapoints"])) (:datapoints result-row)})
 
-(defn correlation-results-to-html [results]
+(defn get-per-input-row [same-input-results]
+  (reduce merge (map single-biomarker-row same-input-results)))
+
+(defn make-per-input-correlation-results
+  "Collection of maps with keys like:
+  {:input 
+   :biomarker1-slope
+   :biomarker1-rsq
+   :biomarker1-datapoints}
+  "
+  [results]
+  (let [rows-by-input (group-by :input results)]
+    (map get-per-input-row (vals rows-by-input))))
+
+(defn maps-to-csv [maps]
+  (stringify-csv (clj->js maps)))
+
+(defn maps-to-html
+  "Converts collection of maps like
+  [{:col1 val1 :col2 val2} {:col1 val3 :col2 val4}]
+  to an HTML table.
+  
+  See https://stackoverflow.com/a/33458370 for ^{:key} map explanation.
+  "
+  [maps]
   [:table
-   [:tr (for [key (keys (first results))]
-          [:th key])]
-   (for [result results]
-     [:tr (for [r (vals result)]
-            [:td r])])])
+   ^{:key (random-uuid)} [:tr (for [key (keys (first maps))]
+                                ^{:key (random-uuid)} [:th key])]
+   (for [m maps]
+     ^{:key (random-uuid)} [:tr (for [r (vals m)]
+                                  ^{:key (random-uuid)} [:td r])])])
 
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
@@ -184,7 +221,8 @@
       [upload-btn input-file-name input-upload-reqs]]
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
       [upload-btn biomarker-file-name biomarker-upload-reqs]]
-     (correlation-results-to-html correlation-results)]))
+     (maps-to-html correlation-results)
+     (maps-to-html (make-per-input-correlation-results correlation-results))]))
 
 ;; -------------------------
 ;; Initialize app

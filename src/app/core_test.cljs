@@ -10,8 +10,8 @@
                                        {:var1 2 :var2 2}
                                        {:var1 3 :var2 3}]))))
 
-(deftest test-correlation-results-to-html
+(deftest test-maps-to-html
   (is (= [:table]
-         (core/correlation-results-to-html
+         (core/maps-to-html
           [["input1" "biomarker1" {:slope 5 :rsq 2}]
            ["input2" "biomarker1" {:slope 10 :rsq 2}]]))))
