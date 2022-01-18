@@ -1,6 +1,7 @@
 (ns app.core-test
   (:require
    [cljs.test :refer (deftest is)]
+   [clojure.string :as st]
    [app.core :as core]))
 
 (deftest test-linear-regression
@@ -13,8 +14,8 @@
 (deftest test-maps-to-html
   (is (= [:table]
          (core/maps-to-html
-          [["input1" "biomarker1" {:slope 5 :rsq 2}]
-           ["input2" "biomarker1" {:slope 10 :rsq 2}]]))))
+          [{"input1" "biomarker1" :slope 5 :rsq 2}
+           {"input2" "biomarker1" :slope 10 :rsq 2}]))))
 
 (deftest test-make-per-input-correlation-results
   (is (= []
@@ -24,18 +25,34 @@
            {:input 3 :biomarker :b :slope 2 :rsq 1 :datapoints 5}
            {:input 4 :biomarker :b :slope 2 :rsq 1 :datapoints 5}]))))
 
-(deftest test-sorted-map
-  (is (= {:input 6, :a 4, :c 1, :b 2}
-         (into (sorted-map-by #(if (= % :input) "aaa" (name %)))
-               {:b 2 :c 1 :a 4 :input 6}))))
+; Reproducing bad map problem.
 
-(defn help-test-map-sorted-maps [m]
-  (into (sorted-map-by #(if (= % :input) "aaa" (name %))) m))
+(prn *clojurescript-version*)
 
-(deftest test-map-sorted-maps
-  (is (= []
-         (let [data (group-by :input [{:b 5 :a-ad 4 :input 6}
-                                      {:b 10 :a-ad 4 :input 5}])]
-           (map help-test-map-sorted-maps (vals data))))))
+(defn single-row [result-row]
+  {:input (:input result-row)
+   (keyword (st/join [(name (:biomarker result-row)) "-datapoints"])) (:datapoints result-row)})
 
-;; I don't think sorted-map-by can be relied upon in cljs
+(defn sort-map [m]
+  ; Sort row so that :input is first, then put this rest in alphabetical order
+  (into (sorted-map-by #(if (= % :input) "aaaaa" (name %))) m))
+
+(defn get-per-input-row [same-input-results]
+  ; Calling sort-map twice here resolves the problem.
+  (sort-map (reduce merge (map single-row same-input-results))))
+
+(defn make-per-input-results
+  [results]
+  (let [rows-by-input (group-by :input results)]
+    (map get-per-input-row (vals rows-by-input))))
+
+(deftest test-bad-map-sorting
+  (is (= '({:input 1 :a-datapoints 5}
+           {:input 2 :a-datapoints 5}
+           {:input 3 :b-datapoints 5}
+           {:input 4 :b-datapoints 5})
+         (make-per-input-results
+          [{:input 1 :biomarker :a :datapoints 5}
+           {:input 2 :biomarker :a :datapoints 5}
+           {:input 3 :biomarker :b :datapoints 5}
+           {:input 4 :biomarker :b :datapoints 5}]))))

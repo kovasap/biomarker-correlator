@@ -176,15 +176,7 @@
    (keyword (st/join [(name (:biomarker result-row)) "-datapoints"])) (:datapoints result-row)})
 
 (defn get-per-input-row [same-input-results]
-  ; Sort row so that :input is first, then biomarkers are in alphabetical order
-  ; TODO WHY DOESNT THIS WORK????
-  (let [merged-map
-        (reduce merge (map single-biomarker-row same-input-results))
-        sorted
-        (into (sorted-map-by #(if (= % :input) "aaaaa" (name %))) merged-map)]
-    (prn "MERGED " merged-map)
-    (prn "SORTED " sorted)
-    sorted))
+  (reduce merge (map single-biomarker-row same-input-results)))
 
 (defn make-per-input-correlation-results
   "Collection of maps with keys like:
@@ -200,6 +192,15 @@
 (defn maps-to-csv [maps]
   (stringify-csv (clj->js maps)))
 
+; Beware sorting maps directly - it's been unreliable.  It's better to convert
+; to lists of 2-vectors and sort those.
+(defn map-to-sorted-pairs [m]
+  (sort-by (fn [pair]
+             (let [k (first pair)]
+               ; Capital letters get sorted before lowercase!
+               (if (= k :input) "AAAAA" (name k))))
+           (seq m)))
+
 (defn maps-to-html
   "Converts collection of maps like
   [{:col1 val1 :col2 val2} {:col1 val3 :col2 val4}]
@@ -208,13 +209,15 @@
   See https://stackoverflow.com/a/33458370 for ^{:key} map explanation.
   "
   [maps]
-  (prn (first maps))
-  [:table
-   ^{:key (random-uuid)} [:tr (for [key (keys (first maps))]
-                                ^{:key (random-uuid)} [:th key])]
-   (for [m maps]
-     ^{:key (random-uuid)} [:tr (for [r (vals m)]
-                                  ^{:key (random-uuid)} [:td r])])])
+  (prn (:input (first maps)))
+  (let [sorted-pairs (map map-to-sorted-pairs maps)]
+    (prn (first sorted-pairs))
+    [:table
+     ^{:key (random-uuid)} [:tr (for [k (map first (first sorted-pairs))]
+                                  ^{:key (random-uuid)} [:th k])]
+     (for [pairs sorted-pairs]
+       ^{:key (random-uuid)} [:tr (for [r (map peek pairs)]
+                                    ^{:key (random-uuid)} [:td r])])]))
 
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
