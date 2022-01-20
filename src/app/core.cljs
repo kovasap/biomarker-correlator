@@ -12,6 +12,12 @@
    [reagent.core :as r]
    [reagent.dom :as d]))
 
+;; TODO Split this code into multiple files and clean it up.
+;; TODO Make a table with columns like this:
+;; Food | Significant biomarker correlation 1 | ... | +1/-1 Correlation Sum | Another Aggregation
+;; TODO Make a table with columns like this:
+;; Biomarker | Significant food correlation 1 | ... | +1/-1 Correlation Sum | Another Aggregation
+
 (def app-state (r/atom {:input-data [{}]
                         :biomarker-data [{}]}))
 
