@@ -1,15 +1,10 @@
 (ns app.core
   (:require
-   [app.submodule :as submodule]
-   [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
-   [cljs.core.async :refer-macros [go go-loop alt!]]
-   [cljs.spec.alpha :as s]
+   [app.csv :as csv]
+   [app.stats :as stats]
+   [app.specs :as specs]
    [clojure.string :as st]
-   ["csv-parse/lib/sync" :rename {parse parse-csv}]
-   ["csv-stringify/lib/sync" :rename {stringify stringify-csv}]
-   [kixi.stats.core :as kixi-c]
-   [kixi.stats.protocols :as kixi-p]
-   [reagent.core :as r]
+   [cljs.spec.alpha :as s]
    [reagent.dom :as d]))
 
 ;; TODO Split this code into multiple files and clean it up.
@@ -18,39 +13,7 @@
 ;; TODO Make a table with columns like this:
 ;; Biomarker | Significant food correlation 1 | ... | +1/-1 Correlation Sum | Another Aggregation
 
-(def app-state (r/atom {:input-data [{}]
-                        :biomarker-data [{}]}))
-
-;; -------- Specs ----------------------------------------------
-
-;; TODO add date validation here
-(s/def :bc/date (s/and string? #(re-matches #".* to .*" %)))
-
-(s/def :bc/dated-row (s/keys :req [:bc/date]))
-
-(s/def :bc/dated-rows (fn [input] every? #(s/valid? :bc/dated-row %) input))
-
-;; -------- Data "Uploading" --------------------------------------------
-;; From https://mrmcc3.github.io/blog/posts/csv-with-clojurescript/ 
-
-(def first-file
-  (map (fn [e]
-         (let [target (.-currentTarget e)
-               file (-> target .-files (aget 0))]
-           (set! (.-value target) "")
-           file))))
-
-(defn my-parse-csv [csv-data]
-  (js->clj
-   (parse-csv csv-data (clj->js {:columns true
-                                 :skip_empty_lines true
-                                 :trim true}))
-   :keywordize-keys true))
-
-(def extract-result
-  (map #(-> % .-target .-result my-parse-csv)))
-
-;; Returns map of dates to :dated-row maps.
+; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec
 (defn get-rows-by-dates [rows]
   {:pre [(s/valid? :bc/dated-rows rows)]}
@@ -58,112 +21,15 @@
   ; (assert (:date (first rows)))
   (into (sorted-map) (map (fn [row] [(:date row) row]) rows)))
 
-(defn merge-rows-using-dates [rows1 rows2]
+(defn merge-rows-using-dates
+  "Merges two sequences of row maps (e.g. from different spreadsheets) using
+  the :date field as the joining attribute."
+  [rows1 rows2]
   {:pre [(s/valid? :bc/dated-rows rows1)
          (s/valid? :bc/dated-rows rows2)]
    :post [(s/valid? :bc/dated-rows %)]}
   (vals (merge-with (fn [row1 row2] (merge row1 row2))
                     (get-rows-by-dates rows1) (get-rows-by-dates rows2))))
-
-;; Input data file
-
-(def input-upload-reqs (chan 1 first-file))
-(def input-file-reads (chan 1 extract-result))
-
-(go-loop []
-  (let [reader (js/FileReader.)
-        file (<! input-upload-reqs)]
-    (swap! app-state assoc :input-file-name (.-name file))
-    (set! (.-onload reader) #(put! input-file-reads %))
-    (.readAsText reader file)
-    (recur)))
-
-(go-loop []
-  (swap! app-state assoc :input-data (<! input-file-reads))
-  (recur))
-
-;; Biomarker data file
-
-(def biomarker-upload-reqs (chan 1 first-file))
-(def biomarker-file-reads (chan 1 extract-result))
-
-(go-loop []
-  (let [reader (js/FileReader.)
-        file (<! biomarker-upload-reqs)]
-    (swap! app-state assoc :biomarker-file-name (.-name file))
-    (set! (.-onload reader) #(put! biomarker-file-reads %))
-    (.readAsText reader file)
-    (recur)))
-
-(go-loop []
-  (swap! app-state assoc :biomarker-data (<! biomarker-file-reads))
-  (recur))
-
-(defn upload-btn [file-name upload-reqs-channel]
-  [:span.upload-label
-   [:label.file-label
-    [:input.file-input
-     {:type "file" :accept ".csv" :on-change #(put! upload-reqs-channel %)}]
-    [:span.file-cta
-     [:span.file-icon
-      [:i.fa.fa-upload.fa-lg]]
-     [:span.file-label (or file-name "Choose a file...")]]]])
-     ;; Adds an "X" that can be clicked to clear the selected file.
-     ;; (when file-name 
-    ;;   [:i.fa.fa-times {:on-click #(reset! app-state {})}]]]]])
-
-;; ----------------------------------------------------
-
-; model is [offset slope]
-(defn compute-linear-estimate [model input]
-  (let [params (kixi-p/parameters model)
-        offset (first params)
-        slope (last params)]
-    (+ offset (* slope input))))
-
-(defn calc-rsq
-  "To compute r-squared, we need to compare each value in data for var2
-  to the value we would expected to get for var2 if we plugged var1
-  into our linear model (computed by kixi/simple-linear-regression)
-  To do this, we need to pass in to kixi/r-squared: 
-    1. a function that takes in a data entry, plugs var1 into the linear
-       model, and returns the var2 value according to the model
-    2. a function that takes in a data entry and returns the actual
-       var2 value"
-  [linear-model var1 var2 data]
-  (if (nil? linear-model)
-    nil
-    (transduce
-     identity (kixi-c/r-squared
-               #(compute-linear-estimate linear-model (var1 %))
-               var2)
-     data)))
-
-(defn filter-missing
-  "Remove maps from data (collection of maps) for which any of the given keys
-  are not present or have nil values."
-  [data & ks]
-  (filter (fn [datum] (every? #(not (st/blank? (% datum))) ks))
-          data))
-
-(defn round [n]
-  (/ (Math/round (* 1000 (+ n (. js/Number -EPSILON)))) 1000))
-
-(defn calc-linear-regression [var1 var2 data]
-  (let [cleaned-data (filter-missing data var1 var2)
-        result (transduce identity
-                          (kixi-c/simple-linear-regression var1 var2)
-                          cleaned-data)
-        error (transduce identity
-                         (kixi-c/regression-standard-error var1 var2)
-                         cleaned-data)
-        rsq (calc-rsq result var1 var2 cleaned-data)]
-    ; (prn "Computing correlation between " var1 " and " var2 " gives " result
-    ;      " with error " error " and r-squared " rsq]
-    {:datapoints (count cleaned-data)
-     :slope (round (if (nil? result) nil
-                       (last (kixi-p/parameters result))))
-     :rsq (round rsq)}))
 
 (defn compute-correlations [input-data biomarker-data]
   (let [input-vars (filter #(not= % :date) (keys (first input-data)))
@@ -172,8 +38,26 @@
         results (for [input input-vars biomarker biomarker-vars]
                   (conj
                    {:input input :biomarker biomarker}
-                   (calc-linear-regression input biomarker merged-data)))]
+                   (stats/calc-linear-regression input biomarker merged-data)))]
     results))
+
+(defn filter-insignificant
+  "Filter row maps from the input that show statistically insignificant
+  correlations"
+  [rows]
+  (filter #(> (:rsq %) 0.05) rows))
+
+(defn make-significant-table
+  "Creates a list of maps showing statistically significant results only with
+  keys like:
+  {:input keyword?
+   :biomarker-correlations}
+  Food | Significant biomarker correlation 1 | ... | +1/-1 Correlation Sum |
+  Another Aggregation
+  "
+  [rows])
+
+; Per-input Table Generation ------------------------------------
 
 (defn single-biomarker-row [result-row]
   {:input (:input result-row)
@@ -195,8 +79,7 @@
   (let [rows-by-input (group-by :input results)]
     (map get-per-input-row (vals rows-by-input))))
 
-(defn maps-to-csv [maps]
-  (stringify-csv (clj->js maps)))
+; ------------------------------------
 
 ; Beware sorting maps directly - it's been unreliable.  It's better to convert
 ; to lists of 2-vectors and sort those.
@@ -215,19 +98,18 @@
   See https://stackoverflow.com/a/33458370 for ^{:key} map explanation.
   "
   [maps]
-  (prn (:input (first maps)))
   (let [sorted-pairs (map map-to-sorted-pairs maps)]
-    (prn (first sorted-pairs))
     [:table
-     ^{:key (random-uuid)} [:tr (for [k (map first (first sorted-pairs))]
-                                  ^{:key (random-uuid)} [:th k])]
-     (for [pairs sorted-pairs]
-       ^{:key (random-uuid)} [:tr (for [r (map peek pairs)]
-                                    ^{:key (random-uuid)} [:td r])])]))
+     [:tbody
+      ^{:key (random-uuid)} [:tr (for [k (map first (first sorted-pairs))]
+                                   ^{:key (random-uuid)} [:th k])]
+      (for [pairs sorted-pairs]
+        ^{:key (random-uuid)} [:tr (for [r (map peek pairs)]
+                                     ^{:key (random-uuid)} [:td r])])]]))
 
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
-         :as state} @app-state
+         :as state} @csv/csv-data
         correlation-results (compute-correlations input-data biomarker-data)]
     [:div.app.content
      [:h1.title "Biomarker Correlator"]
@@ -239,10 +121,12 @@
       client side in the browser. Therefore, it can be saved and run offline as
       needed."]
      [:div.topbar.hidden-print "\"Upload\" input data"
-      [upload-btn input-file-name input-upload-reqs]]
+      [csv/upload-btn input-file-name csv/input-upload-reqs]]
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
-      [upload-btn biomarker-file-name biomarker-upload-reqs]]
+      [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
+     [:h3 "Pairwise Table"]
      (maps-to-html correlation-results)
+     [:h3 "Per-Input Table"]
      (maps-to-html (make-per-input-correlation-results correlation-results))]))
 
 ;; -------------------------

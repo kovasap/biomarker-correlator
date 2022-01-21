@@ -8,8 +8,7 @@
  :builds       {:app {:target     :browser
                       :output-dir "public/js"
                       :asset-path "/js"
-                      :modules    {:app {:entries [app.core
-                                                   app.submodule]}}
+                      :modules    {:app {:entries [app.core]}}
                       :devtools   {:after-load app.core/mount-root}}
                 :test {:target :browser-test
                        :test-dir "out/test"
