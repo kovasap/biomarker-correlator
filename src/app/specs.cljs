@@ -1,18 +1,24 @@
 (ns app.specs
   (:require
-   [cljs.spec.alpha :as s]))
-
-; TODO look into using malli instead of spec here
-; https://github.com/metosin/malli
-; https://www.reddit.com/r/Clojure/comments/lpv8ok/spec_vs_malli/
-; or schema:
-; https://github.com/plumatic/schema
+    [spec-tools.data-spec :as ds]
+    [cljs.spec.alpha :as s]))
 
 ; Schema seems like a less verbose, simpler option to start with
 ; Or maybe ghostwheel??
 ; https://github.com/gnl/ghostwheel
 ; This would require doing something like
 ; https://github.com/clj-kondo/clj-kondo/blob/master/doc/config.md#lint-a-custom-macro-like-a-built-in-macro
+
+; TODO use https://github.com/binaryage/cljs-devtools
+
+; Documentation
+; https://github.com/metosin/spec-tools/blob/master/docs/02_data_specs.md
+
+
+(def dated-row-spec
+  (ds/spec
+    {:date string?}))
+   
 
 ;; TODO add date validation here
 (s/def :bc/date (s/and string? #(re-matches #".* to .*" %)))

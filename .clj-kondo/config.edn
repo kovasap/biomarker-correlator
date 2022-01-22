@@ -1,0 +1,2 @@
+; https://github.com/clj-kondo/clj-kondo/blob/master/doc/config.md#lint-a-custom-macro-like-a-built-in-macro
+{:lint-as {ghostwheel.core/>defn clojure.core/defn}}
