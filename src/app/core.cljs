@@ -4,7 +4,9 @@
    [app.stats :as stats]
    [app.specs :as specs]
    [clojure.string :as st]
+   [spec-tools.data-spec :as ds]
    [cljs.spec.alpha :as s]
+   [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [reagent.dom :as d]))
 
 ;; TODO Split this code into multiple files and clean it up.
@@ -56,6 +58,36 @@
   Another Aggregation
   "
   [rows])
+
+(defn get-significant-correlations-for-input
+  [data]
+  {:pre [(s/valid? :bc/dated-rows data)]
+   :post [(s/valid? specs/significant-correlations %)]})
+
+(defn make-significant-correlations-html
+  "Creates a table like this:
+
+           Input
+        Aggregate 1
+        Aggregate 2
+  Biomarker | r | p | n
+  data      | 0 | 0 | 0
+  ...
+  "
+  [data]
+  {:pre [(s/valid? specs/significant-correlations data)]
+   :post [(s/valid? string? %)]}
+  ; [specs/significant-correlations :ret string?]
+  [:table
+   [:tbody
+    [:tr [:th {:colspan "4"} (:input data)]]
+    [:tr [:th {:colspan "4"} (:score data)]]
+    [:tr [:th {:colspan "4"} (:average data)]]
+    ; TODO find out how to generate this header from the spec.
+    [:tr [:th "Biomarker"] [:th "Slope"] [:th "R-squared"] [:th "Datapoints"]]
+    (for [correlations (:correlations data)]
+      [:tr (for [v (vals correlations)]
+             [:td v])])]])
 
 ; Per-input Table Generation ------------------------------------
 

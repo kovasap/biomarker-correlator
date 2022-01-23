@@ -13,6 +13,8 @@
                       :output-dir "public/js"
                       :asset-path "/js"
                       :modules    {:app {:entries [app.core]}}
+                      :dev {:compiler-options {:external-config
+                                               {:ghostwheel {}}}}
                       :devtools   {:preloads [devtools.preload]
                                    :after-load app.core/mount-root}}
                 :test {:target :browser-test

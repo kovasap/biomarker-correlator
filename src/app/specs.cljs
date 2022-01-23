@@ -1,7 +1,7 @@
 (ns app.specs
   (:require
-    [spec-tools.data-spec :as ds]
-    [cljs.spec.alpha :as s]))
+   [spec-tools.data-spec :as ds]
+   [cljs.spec.alpha :as s]))
 
 ; Schema seems like a less verbose, simpler option to start with
 ; Or maybe ghostwheel??
@@ -14,11 +14,19 @@
 ; Documentation
 ; https://github.com/metosin/spec-tools/blob/master/docs/02_data_specs.md
 
+(def significant-correlations
+  (ds/spec
+   {:input keyword?
+    :score int?
+    :average float?
+    :correlations {:biomarker keyword?
+                   :slope float?
+                   :rsq float?
+                   :datapoints int?}}))
 
 (def dated-row-spec
   (ds/spec
-    {:date string?}))
-   
+   {:date string?}))
 
 ;; TODO add date validation here
 (s/def :bc/date (s/and string? #(re-matches #".* to .*" %)))
