@@ -18,7 +18,7 @@
 ; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec
 (defn get-rows-by-dates [rows]
-  {:pre [(s/valid? :bc/dated-rows rows)]}
+  ; {:pre [(s/valid? :bc/dated-rows rows)]}
   ; TODO find out how to get spec to do this assert for me
   ; (assert (:date (first rows)))
   (into (sorted-map) (map (fn [row] [(:date row) row]) rows)))
@@ -27,27 +27,30 @@
   "Merges two sequences of row maps (e.g. from different spreadsheets) using
   the :date field as the joining attribute."
   [rows1 rows2]
-  {:pre [(s/valid? :bc/dated-rows rows1)
-         (s/valid? :bc/dated-rows rows2)]
-   :post [(s/valid? :bc/dated-rows %)]}
+  ; {:pre [(s/valid? :bc/dated-rows rows1)
+  ;        (s/valid? :bc/dated-rows rows2)
+  ;  :post [(s/valid? :bc/dated-rows %)]]
   (vals (merge-with (fn [row1 row2] (merge row1 row2))
                     (get-rows-by-dates rows1) (get-rows-by-dates rows2))))
 
+(defn get-vars
+  "Gets all variables (csv columns) from parsed csv maps besides the date."
+  [data]
+  (filter #(not= % :date) (keys (first data))))
+
 (defn compute-correlations [input-data biomarker-data]
-  (let [input-vars (filter #(not= % :date) (keys (first input-data)))
-        biomarker-vars (filter #(not= % :date) (keys (first biomarker-data)))
-        merged-data (merge-rows-using-dates input-data biomarker-data)
-        results (for [input input-vars biomarker biomarker-vars]
-                  (conj
-                   {:input input :biomarker biomarker}
-                   (stats/calc-linear-regression input biomarker merged-data)))]
-    results))
+  (let [merged-data (merge-rows-using-dates input-data biomarker-data)]
+    (for [input (get-vars input-data)
+          biomarker (get-vars biomarker-data)]
+      {:input input :biomarker biomarker
+       :regression-results (stats/calc-linear-regression input biomarker
+                                                         merged-data)})))
 
 (defn filter-insignificant
   "Filter row maps from the input that show statistically insignificant
   correlations"
   [rows]
-  (filter #(> (:rsq %) 0.05) rows))
+  (filter #(> (:rsq (:regression-results %)) 0.05) rows))
 
 (defn make-significant-table
   "Creates a list of maps showing statistically significant results only with
@@ -60,7 +63,15 @@
   [rows])
 
 (defn get-significant-correlations-for-input
-  [data])
+  [data]
+  (let [significant-data-by-input
+        (group-by :input (filter-insignificant data))]
+    (map (fn [[input correlations]]
+           {:input input
+            :score ()  ; TODO calculate and add here
+            :average ()  ; TODO calculate and add here
+            :correlations (map #(dissoc % :input) correlations)})
+         significant-data-by-input)))
   ; {:pre [(s/valid? :bc/dated-rows data)]
   ;  :post [(s/valid? specs/significant-correlations %)]])
 
@@ -75,31 +86,58 @@
   ...
   "
   [data]
-  {:pre [(s/valid? specs/significant-correlations data)]
-   :post [(s/valid? string? %)]}
+  ; {:pre [(s/valid? specs/significant-correlations data)]
+  ;  :post [(s/valid? string? %)]]
   ; [specs/significant-correlations :ret string?]
   [:table
    [:tbody
     ; https://www.w3schools.com/html/html_table_headers.asp
-    [:tr [:th {:colspan "4"} (:input data)]]
-    [:tr [:th {:colspan "4"} (:score data)]]
-    [:tr [:th {:colspan "4"} (:average data)]]
+    [:tr [:th {:colSpan 4} (:input data)]]
+    [:tr [:th {:colSpan 4} (:score data)]]
+    [:tr [:th {:colSpan 4} (:average data)]]
     ; TODO find out how to generate this header from the spec.
     [:tr [:th "Biomarker"] [:th "Slope"] [:th "R-squared"] [:th "Datapoints"]]
     (for [correlations (:correlations data)]
-      [:tr (for [v (vals correlations)]
-             [:td v])])]])
+      [:tr ^{:key (random-uuid)} [:td (:biomarker correlations)]
+       (for [v (vals (:regression-results correlations))]
+         ^{:key (random-uuid)} [:td v])])]])
+
+(defn flatten-map
+  "Converts map like {:input :hi :results {:slope 50}} to
+  {:input :hi :slope 50}"
+  [data]
+  (into {} (filter #(and (vector? %) (not (map? (last %))))
+                   (tree-seq associative? seq data))))
+
+(defn flatten-map-concat-keys
+  "Converts map like {:input :hi :results {:slope 50}} to
+  {:input :hi :results-slope 50}
+  
+  Taken from https://stackoverflow.com/a/17902228"
+  ([form separator]
+   (into {} (flatten-map-concat-keys form separator nil)))
+  ([form separator pre]
+   (mapcat (fn [[k v]]
+             (let [prefix (if pre (str pre separator (name k)) (name k))]
+               (if (map? v)
+                 (flatten-map-concat-keys v separator prefix)
+                 [[(keyword prefix) v]])))
+           form)))
 
 ; Per-input Table Generation ------------------------------------
 
-(defn single-biomarker-row [result-row]
-  {:input (:input result-row)
-   (keyword (st/join [(name (:biomarker result-row)) "-slope"])) (:slope result-row)
-   (keyword (st/join [(name (:biomarker result-row)) "-rsq"])) (:rsq result-row)
-   (keyword (st/join [(name (:biomarker result-row)) "-datapoints"])) (:datapoints result-row)})
+(defn get-biomarker-regression-result-keys
+  "Converts {:input :i :biomarker :b :results {:slope 5.0}} to
+  {:input :i :b-slope 5.0}
+  "
+  [m]
+  (conj {:input (:input m)}
+        (into {} (for [[k v] (:regression-results m)]
+                   [(st/join "-" [(name (:biomarker m)) (name k)]) v]))))
 
 (defn get-per-input-row [same-input-results]
-  (reduce merge (map single-biomarker-row same-input-results)))
+  (reduce merge
+          (map get-biomarker-regression-result-keys same-input-results)))
 
 (defn make-per-input-correlation-results
   "Collection of maps with keys like:
@@ -158,9 +196,12 @@
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
       [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
      [:h3 "Pairwise Table"]
-     (maps-to-html correlation-results)
+     (maps-to-html (map flatten-map correlation-results))
      [:h3 "Per-Input Table"]
-     (maps-to-html (make-per-input-correlation-results correlation-results))]))
+     (maps-to-html (make-per-input-correlation-results correlation-results))
+     [:h3 "Significant Correlations"]
+     (make-significant-correlations-html
+      (first (get-significant-correlations-for-input correlation-results)))]))
 
 ;; -------------------------
 ;; Initialize app
