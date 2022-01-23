@@ -60,9 +60,9 @@
   [rows])
 
 (defn get-significant-correlations-for-input
-  [data]
-  {:pre [(s/valid? :bc/dated-rows data)]
-   :post [(s/valid? specs/significant-correlations %)]})
+  [data])
+  ; {:pre [(s/valid? :bc/dated-rows data)]
+  ;  :post [(s/valid? specs/significant-correlations %)]])
 
 (defn make-significant-correlations-html
   "Creates a table like this:
@@ -80,6 +80,7 @@
   ; [specs/significant-correlations :ret string?]
   [:table
    [:tbody
+    ; https://www.w3schools.com/html/html_table_headers.asp
     [:tr [:th {:colspan "4"} (:input data)]]
     [:tr [:th {:colspan "4"} (:score data)]]
     [:tr [:th {:colspan "4"} (:average data)]]

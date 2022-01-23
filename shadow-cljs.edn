@@ -6,6 +6,7 @@
                 [gnl/ghostwheel "0.3.9"]
                 [gnl/ghostwheel.tracer "0.3.9"]
                 [kixi/stats "0.5.4"]
+                [cider/cider-nrepl "0.24.0"]
                 [binaryage/devtools "1.0.4"]
                 [cljs-http "0.1.46"]
                 [reagent "1.1.0"]]

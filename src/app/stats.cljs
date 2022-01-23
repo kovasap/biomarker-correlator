@@ -1,6 +1,7 @@
 (ns app.stats
   (:require
    [clojure.string :as st]
+   [app.specs :as specs]
    [kixi.stats.core :as kixi-c]
    [kixi.stats.protocols :as kixi-p]))
 
