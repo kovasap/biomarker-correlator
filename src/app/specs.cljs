@@ -1,12 +1,14 @@
 (ns app.specs
   (:require
    [spec-tools.data-spec :as ds]
+   [clojure.test.check.generators]
    [cljs.spec.gen.alpha :as gen]
    [cljs.spec.alpha :as s]))
 
 ; My structure defined in a schema-like syntax using spec-tools.data-spec
-(def ::input-correlations-concise
+(def input-correlations
   (ds/spec
+   ::input-correlations
    {:input keyword?
     :score int?
     :average float?
@@ -15,36 +17,37 @@
                                          :rsq float?
                                          :datapoints int?}}]}))
 
-; Unfortunately, this throws an exception and I'm not sure why
-(gen/generate (s/gen ::input-correlations-concise))
+(gen/generate (s/gen input-correlations))
+
+(s/def ::input-correlations input-correlations)
 
 ; My structure defined using pure spec.
-(s/def ::input-correlations
-  (s/keys :req-un [::input ::aggregates ::correlations]))
-
-(s/def ::input keyword?)
-
-(s/def ::aggregates
-  (s/keys :req-un [::score ::average]))
-(s/def ::score int?)
-(s/def ::average float?)
-
-(s/def ::correlations
-  (s/keys :req-un [::biomarker ::regression-results]))
-(s/def ::biomarker keyword?)
-(s/def ::regression-results
-  (s/coll-of ::regression-result))
-
-(s/def ::regression-result
-  (s/keys :req-un [::slope ::datapoints ::rsq]))
-(s/def ::slope float?)
-(s/def ::datapoints int?)
-(s/def ::rsq float?)
-
-(s/valid? ::regression-result {:slope 1.0 :datapoints 2 :rsq 3.4})
-
-; This works as expected!
-(gen/generate (s/gen ::input-correlations))
+; (s/def ::input-correlations
+;   (s/keys :req-un [::input ::aggregates ::correlations]))
+; 
+; (s/def ::input keyword?)
+; 
+; (s/def ::aggregates
+;   (s/keys :req-un [::score ::average]))
+; (s/def ::score int?)
+; (s/def ::average float?)
+; 
+; (s/def ::correlations
+;   (s/keys :req-un [::biomarker ::regression-results]))
+; (s/def ::biomarker keyword?)
+; (s/def ::regression-results
+;   (s/coll-of ::regression-result))
+; 
+; (s/def ::regression-result
+;   (s/keys :req-un [::slope ::datapoints ::rsq]))
+; (s/def ::slope float?)
+; (s/def ::datapoints int?)
+; (s/def ::rsq float?)
+; 
+; (s/valid? ::regression-result {:slope 1.0 :datapoints 2 :rsq 3.4})
+; 
+; ; This works as expected!
+; (gen/generate (s/gen ::input-correlations))
 
 ; (def dated-row-spec
 ;   (ds/spec

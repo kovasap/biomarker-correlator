@@ -1,4 +1,6 @@
 (ns app.core
+  #:ghostwheel.core {:check     true
+                     :num-tests 10}
   (:require
    [app.csv :as csv]
    [app.stats :as stats]
@@ -7,6 +9,7 @@
    [spec-tools.data-spec :as ds]
    [cljs.spec.alpha :as s]
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
+   [reagent.core :as r]
    [reagent.dom :as d]))
 
 ;; TODO Split this code into multiple files and clean it up.
@@ -75,9 +78,8 @@
   ; {:pre [(s/valid? :bc/dated-rows data)]
   ;  :post [(s/valid? specs/significant-correlations %)]])
 
-(defn make-significant-correlations-html
-  "Creates a table like this:
-
+(>defn make-significant-correlations-html
+       "Creates a table like this:
            Input
         Aggregate 1
         Aggregate 2
@@ -86,21 +88,24 @@
   ...
   "
   [data]
-  ; {:pre [(s/valid? specs/significant-correlations data)]
-  ;  :post [(s/valid? string? %)]]
-  ; [specs/significant-correlations :ret string?]
-  [:table
-   [:tbody
-    ; https://www.w3schools.com/html/html_table_headers.asp
-    [:tr [:th {:colSpan 4} (:input data)]]
-    [:tr [:th {:colSpan 4} (:score data)]]
-    [:tr [:th {:colSpan 4} (:average data)]]
-    ; TODO find out how to generate this header from the spec.
-    [:tr [:th "Biomarker"] [:th "Slope"] [:th "R-squared"] [:th "Datapoints"]]
-    (for [correlations (:correlations data)]
-      [:tr ^{:key (random-uuid)} [:td (:biomarker correlations)]
-       (for [v (vals (:regression-results correlations))]
-         ^{:key (random-uuid)} [:td v])])]])
+ ; {:pre [(s/valid? specs/significant-correlations data)]
+ ;  :post [(s/valid? string? %)]]
+  [:app.specs/input-correlations => vector?]
+  [:div
+   [:a {:id (:input data)} [:h3 (:input data)]]
+   [:table
+    [:tbody
+ ; https://www.w3schools.com/html/html_table_headers.asp
+     [:tr [:th {:colSpan 4} (:input data)]]
+     [:tr [:th {:colSpan 4} (:score data)]]
+     [:tr [:th {:colSpan 4} (:average data)]]
+ ; TODO find out how to generate this header from the spec.
+     [:tr [:th "Biomarker"] [:th "Slope"] [:th "R-squared"] [:th "Datapoints"]]
+     (for [correlations (:correlations data)]
+       [:tr ^{:key (random-uuid)}
+        [:td [:a {:href (:biomarker correlations)} (:biomarker correlations)]]
+        (for [v (vals (:regression-results correlations))]
+          ^{:key (random-uuid)} [:td v])])]]])
 
 (defn flatten-map
   "Converts map like {:input :hi :results {:slope 50}} to
@@ -178,6 +183,24 @@
         ^{:key (random-uuid)} [:tr (for [r (map peek pairs)]
                                      ^{:key (random-uuid)} [:td r])])]]))
 
+(defn hideable
+  "Adds a clickable hide button to the component.
+
+  I would use a details/summary html element, but they don't seem to play
+  nicely with react/reagent :(.
+  
+  Can be used like this:
+  [hidable component-to-hide]"
+  [_]
+  (let [hidden (r/atom true)]
+    (fn [component]
+      [:div
+        [:button {:on-click #(reset! hidden (not @hidden))}
+         "Click to hide/show"]
+        [:div {:style {:display (if @hidden "none" "block")}}
+         component]])))
+  
+
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
          :as state} @csv/csv-data
@@ -196,17 +219,23 @@
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
       [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
      [:h3 "Pairwise Table"]
-     (maps-to-html (map flatten-map correlation-results))
+     [:div {:on-click #(reset! r/atom)}]
+     [hideable (maps-to-html (map flatten-map correlation-results))]
      [:h3 "Per-Input Table"]
-     (maps-to-html (make-per-input-correlation-results correlation-results))
+     [hideable (maps-to-html (make-per-input-correlation-results
+                               correlation-results))]
      [:h3 "Significant Correlations"]
      (make-significant-correlations-html
       (first (get-significant-correlations-for-input correlation-results)))]))
 
+; Run ghostwheel generative tests
+; TODO determine if there is a better place for this.
+(g/check)
+
 ;; -------------------------
 ;; Initialize app
 
-(defn mount-root []
+(defn ^:dev/after-load mount-root []
   (d/render [home-page] (.getElementById js/document "app")))
 
 (defn ^:export init! []
