@@ -5,21 +5,48 @@
    [cljs.spec.gen.alpha :as gen]
    [cljs.spec.alpha :as s]))
 
-; My structure defined in a schema-like syntax using spec-tools.data-spec
-(def input-correlations
-  (ds/spec
-   ::input-correlations
-   {:input keyword?
-    :score int?
-    :average float?
-    :correlations [{:biomarker keyword?
-                    :regression-results {:slope float?
-                                         :rsq float?
-                                         :datapoints int?}}]}))
 
-(gen/generate (s/gen input-correlations))
+(def dated-rows
+  (ds/spec ::dated-rows
+    [{:date keyword?}]))
+(s/def ::dated-rows dated-rows)
 
-(s/def ::input-correlations input-correlations)
+
+(def regression-results
+  (ds/spec ::regression-results
+    {:slope float?
+     :rsq float?
+     :datapoints int?}))
+(s/def ::regression-results regression-results)
+
+
+(def pairwise-correlations
+  (ds/spec ::pairwise-correlations
+    [{:input keyword?
+      :biomarker keyword?
+      :regression-results ::regression-results}]))
+(s/def ::pairwise-correlations pairwise-correlations)
+
+
+(def one-to-many-correlation
+  (ds/spec ::one-to-many-correlation
+    {:one-var keyword?
+     :score int?
+     :average float?
+     :correlations [{:many-var keyword?
+                     :regression-results ::regression-results}]}))
+(s/def ::one-to-many-correlation one-to-many-correlation)
+(s/def ::one-to-many-correlations
+  (s/coll-of ::one-to-many-correlation))
+
+
+(s/def ::hiccup vector?)
+
+; (gen/generate (s/gen one-to-many-correlation))
+
+
+
+
 
 ; My structure defined using pure spec.
 ; (s/def ::input-correlations

@@ -5,9 +5,8 @@
    [app.csv :as csv]
    [app.stats :as stats]
    [app.specs :as specs]
+   [app.ui :as ui]
    [clojure.string :as st]
-   [spec-tools.data-spec :as ds]
-   [cljs.spec.alpha :as s]
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [reagent.core :as r]
    [reagent.dom :as d]))
@@ -26,13 +25,12 @@
   ; (assert (:date (first rows)))
   (into (sorted-map) (map (fn [row] [(:date row) row]) rows)))
 
-(defn merge-rows-using-dates
+(>defn merge-rows-using-dates
   "Merges two sequences of row maps (e.g. from different spreadsheets) using
   the :date field as the joining attribute."
   [rows1 rows2]
-  ; {:pre [(s/valid? :bc/dated-rows rows1)
-  ;        (s/valid? :bc/dated-rows rows2)
-  ;  :post [(s/valid? :bc/dated-rows %)]]
+  [:app.specs/dated-rows :app.specs/dated-rows
+   => :app.specs/dated-rows]
   (vals (merge-with (fn [row1 row2] (merge row1 row2))
                     (get-rows-by-dates rows1) (get-rows-by-dates rows2))))
 
@@ -41,7 +39,10 @@
   [data]
   (filter #(not= % :date) (keys (first data))))
 
-(defn compute-correlations [input-data biomarker-data]
+(>defn compute-correlations
+  [input-data biomarker-data]
+  [:app.specs/dated-rows :app.specs/dated-rows
+   => :app.specs/pairwise-correlations]
   (let [merged-data (merge-rows-using-dates input-data biomarker-data)]
     (for [input (get-vars input-data)
           biomarker (get-vars biomarker-data)]
@@ -65,21 +66,22 @@
   "
   [rows])
 
-(defn get-significant-correlations-for-input
-  [data]
-  (let [significant-data-by-input
-        (group-by :input (filter-insignificant data))]
-    (map (fn [[input correlations]]
-           {:input input
-            :score ()  ; TODO calculate and add here
-            :average ()  ; TODO calculate and add here
-            :correlations (map #(dissoc % :input) correlations)})
-         significant-data-by-input)))
-  ; {:pre [(s/valid? :bc/dated-rows data)]
-  ;  :post [(s/valid? specs/significant-correlations %)]])
+(>defn get-significant-correlations
+  [data one-var one-var-value many-var]
+  [:app.specs/pairwise-correlations keyword? keyword? keyword?
+   | #(every? (fn [d] (contains? d one-var))  data)
+   => :app.specs/one-to-many-correlation]
+  (let [one-var-significant-correlations
+        (one-var-value (group-by one-var (filter-insignificant data)))]
+    {:one-var one-var-value
+     :score 0 ; TODO calculate and add here
+     :average 0.0 ; TODO calculate and add here
+     :correlations (for [correlation one-var-significant-correlations]
+                     {:many-var (many-var correlation)
+                      :regression-results (:regression-results correlation)})}))
 
 (>defn make-significant-correlations-html
-       "Creates a table like this:
+  "Creates a table like this:
            Input
         Aggregate 1
         Aggregate 2
@@ -87,25 +89,40 @@
   data      | 0 | 0 | 0
   ...
   "
+  {::g/ignore-fx true} ; I think the random-uuid calls trigger side effects as
+                       ; far as ghostwheel is concerned
   [data]
- ; {:pre [(s/valid? specs/significant-correlations data)]
- ;  :post [(s/valid? string? %)]]
-  [:app.specs/input-correlations => vector?]
-  [:div
-   [:a {:id (:input data)} [:h3 (:input data)]]
-   [:table
+  [:app.specs/one-to-many-correlation => :app.specs/hiccup]
+  [:div]
+  [:table
     [:tbody
- ; https://www.w3schools.com/html/html_table_headers.asp
-     [:tr [:th {:colSpan 4} (:input data)]]
-     [:tr [:th {:colSpan 4} (:score data)]]
-     [:tr [:th {:colSpan 4} (:average data)]]
- ; TODO find out how to generate this header from the spec.
-     [:tr [:th "Biomarker"] [:th "Slope"] [:th "R-squared"] [:th "Datapoints"]]
+;  https://www.w3schools.com/html/html_table_headers.asp
+     [:tr [:th {:colSpan 4} [:a {:id (:one-var data)} (:one-var data)]]]
+     [:tr [:th {:colSpan 2} :score] [:td {:colSpan 2} (:score data)]]
+     [:tr [:th {:colSpan 2} :average] [:td {:colSpan 2} (:average data)]]
+;  TODO find out how to generate this header from the spec.
+     [:tr [:th "Correlate"] [:th "Slope"] [:th "R-squared"] [:th "Datapoints"]]
      (for [correlations (:correlations data)]
        [:tr ^{:key (random-uuid)}
-        [:td [:a {:href (:biomarker correlations)} (:biomarker correlations)]]
+        [:td [:a {:href (st/join ["#" (name (:many-var correlations))])}
+                 (:many-var correlations)]]
         (for [v (vals (:regression-results correlations))]
-          ^{:key (random-uuid)} [:td v])])]]])
+          ^{:key (random-uuid)} [:td v])])]])
+
+(>defn make-pairwise-significant-correlations-html
+  [correlations]
+  [:app.specs/pairwise-correlations => :app.specs/hiccup]
+  (let [unique-inputs (set (map #(:input %) correlations))
+        unique-biomarkers (set (map #(:biomarker %) correlations))]
+    [:div
+      [:div (for [input unique-inputs]
+              (make-significant-correlations-html
+                (get-significant-correlations
+                  correlations :input input :biomarker)))]
+      [:div (for [biomarker unique-biomarkers]
+              (make-significant-correlations-html
+                (get-significant-correlations
+                  correlations :biomarker biomarker :input)))]]))
 
 (defn flatten-map
   "Converts map like {:input :hi :results {:slope 50}} to
@@ -157,50 +174,6 @@
 
 ; ------------------------------------
 
-; Beware sorting maps directly - it's been unreliable.  It's better to convert
-; to lists of 2-vectors and sort those.
-(defn map-to-sorted-pairs [m]
-  (sort-by (fn [pair]
-             (let [k (first pair)]
-               ; Capital letters get sorted before lowercase!
-               (if (= k :input) "AAAAA" (name k))))
-           (seq m)))
-
-(defn maps-to-html
-  "Converts collection of maps like
-  [{:col1 val1 :col2 val2} {:col1 val3 :col2 val4}]
-  to an HTML table.
-  
-  See https://stackoverflow.com/a/33458370 for ^{:key} map explanation.
-  "
-  [maps]
-  (let [sorted-pairs (map map-to-sorted-pairs maps)]
-    [:table
-     [:tbody
-      ^{:key (random-uuid)} [:tr (for [k (map first (first sorted-pairs))]
-                                   ^{:key (random-uuid)} [:th k])]
-      (for [pairs sorted-pairs]
-        ^{:key (random-uuid)} [:tr (for [r (map peek pairs)]
-                                     ^{:key (random-uuid)} [:td r])])]]))
-
-(defn hideable
-  "Adds a clickable hide button to the component.
-
-  I would use a details/summary html element, but they don't seem to play
-  nicely with react/reagent :(.
-  
-  Can be used like this:
-  [hidable component-to-hide]"
-  [_]
-  (let [hidden (r/atom true)]
-    (fn [component]
-      [:div
-        [:button {:on-click #(reset! hidden (not @hidden))}
-         "Click to hide/show"]
-        [:div {:style {:display (if @hidden "none" "block")}}
-         component]])))
-  
-
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
          :as state} @csv/csv-data
@@ -212,21 +185,21 @@
       correlations. "]
      [:p "Despite presenting like a website, there is no server
       behind this app that data is sent to for analysis; everything is done
-      client side in the browser. Therefore, it can be saved and run offline as
-      needed."]
+      client side in the browser. Therefore, the page can be saved and run
+      offline as needed."]
      [:div.topbar.hidden-print "\"Upload\" input data"
       [csv/upload-btn input-file-name csv/input-upload-reqs]]
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
       [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
      [:h3 "Pairwise Table"]
-     [:div {:on-click #(reset! r/atom)}]
-     [hideable (maps-to-html (map flatten-map correlation-results))]
+     [ui/hideable (ui/maps-to-html (map flatten-map correlation-results))]
      [:h3 "Per-Input Table"]
-     [hideable (maps-to-html (make-per-input-correlation-results
-                               correlation-results))]
+     [ui/hideable (ui/maps-to-html (make-per-input-correlation-results
+                                    correlation-results))]
      [:h3 "Significant Correlations"]
-     (make-significant-correlations-html
-      (first (get-significant-correlations-for-input correlation-results)))]))
+     (if (nil? correlation-results)  ; TODO remove if unnecessary
+       [:div]
+       (make-pairwise-significant-correlations-html correlation-results))]))
 
 ; Run ghostwheel generative tests
 ; TODO determine if there is a better place for this.
