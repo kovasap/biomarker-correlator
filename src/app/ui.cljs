@@ -47,6 +47,3 @@
          "Click to hide/show"]
         [:div {:style {:display (if @hidden "none" "block")}}
          component]])))
-  
-
-

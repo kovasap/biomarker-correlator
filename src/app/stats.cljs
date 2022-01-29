@@ -42,16 +42,19 @@
 
 (defn calc-linear-regression [var1 var2 data]
   (let [cleaned-data (filter-missing data var1 var2)
-        result (transduce identity
-                          (kixi-c/simple-linear-regression var1 var2)
-                          cleaned-data)
+        linear-result (transduce identity
+                                 (kixi-c/simple-linear-regression var1 var2)
+                                 cleaned-data)
+        correlation-result (transduce identity
+                                      (kixi-c/correlation var1 var2)
+                                      cleaned-data)
         error (transduce identity
                          (kixi-c/regression-standard-error var1 var2)
                          cleaned-data)
-        rsq (calc-rsq result var1 var2 cleaned-data)]
-    ; (prn "Computing correlation between " var1 " and " var2 " gives " result
-    ;      " with error " error " and r-squared " rsq]
-    {:datapoints (count cleaned-data)
-     :slope (round (if (nil? result) nil
-                       (last (kixi-p/parameters result))))
-     :rsq (round rsq)}))
+        rsq (calc-rsq linear-result var1 var2 cleaned-data)]
+    {:slope (round (if (nil? linear-result) nil
+                       (last (kixi-p/parameters linear-result))))
+     :correlation (round correlation-result)
+     :error (round error)
+     :rsq (round rsq)
+     :datapoints (count cleaned-data)}))

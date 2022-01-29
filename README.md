@@ -1,6 +1,10 @@
 # Biomarker Correlator
 
-We want to make 
+## TODOs
+
+- Improve table appearance with
+  https://github.com/Frozenlock/reagent-table/blob/master/dev/reagent_table/dev.cljs
+- Calculate p-values: https://github.com/MastodonC/kixi.stats/issues/40
 
 ## Libraries to use:
 
