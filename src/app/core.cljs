@@ -8,7 +8,6 @@
    [app.ui :as ui]
    [clojure.string :as st]
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
-   [reagent-table.core :as rt]
    [reagent.core :as r]
    [reagent.dom :as d]))
 
@@ -181,84 +180,12 @@
 ; ------------------------------------
 
 
-; TODO clean up these functions
-(defn- cell-data
-  "Resolve the data within a row for a specific column"
-  [row cell]
-  (let [{:keys [path expr]} cell]
-    (or (and path
-             (get-in row path))
-        (and expr
-             (expr row)))))
-(defn- cell-fn
-  "Return the cell hiccup form for rendering.
-   - render-info the specific column from :column-model
-   - row the current row
-   - row-num the row number
-   - col-num the column number in model coordinates"
-  [render-info row row-num col-num]
-  (let [{:keys [format attrs]
-         :or   {format identity
-                attrs (fn [_] {})}} render-info
-        data    (cell-data row render-info)
-        content (format data)
-        attrs   (attrs data)]
-    [:span
-     attrs
-     content]))
-(defn compare-vals
-  "A comparator that works for the various types found in table structures.
-  This is a limited implementation that expects the arguments to be of
-  the same type. The :else case is to call compare, which will throw
-  if the arguments are not comparable to each other or give undefined
-  results otherwise.
-  Both arguments can be a vector, in which case they must be of equal
-  length and each element is compared in turn."
-  [x y]
-  (cond
-    (and (vector? x)
-         (vector? y)
-         (= (count x) (count y)))
-    (reduce #(let [r (compare (first %2) (second %2))]
-               (if (not= r 0)
-                 (reduced r)
-                 r))
-            0
-            (map vector x y))
-
-    (or (and (number? x) (number? y))
-        (and (string? x) (string? y))
-        (and (boolean? x) (boolean? y)))
-    (compare x y)
-
-    :else ;; hope for the best... are there any other possiblities?
-    (compare x y)))
-(defn- sort-fn
-  "Generic sort function for tabular data. Sort rows using data resolved from
-  the specified columns in the column model."
-  [rows column-model sorting]
-  (sort (fn [row-x row-y]
-          (reduce
-            (fn [_ sort]
-              (let [column (column-model (first sort))
-                    direction (second sort)
-                    cell-x (cell-data row-x column)
-                    cell-y (cell-data row-y column)
-                    compared (if (= direction :asc)
-                               (compare-vals cell-x cell-y)
-                               (compare-vals cell-y cell-x))]
-                (when-not (zero? compared)
-                  (reduced compared))))
-                
-            0
-            sorting))
-        rows))
-
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
          :as state} @csv/csv-data
         correlation-results (compute-correlations input-data biomarker-data)
-        correlation-results-atom (r/atom correlation-results)]
+        correlation-results-atom (r/atom
+                                   (map flatten-map correlation-results))]
     [:div.app.content
      [:h1.title "Biomarker Correlator"]
      [:p "This application calculates cross correlations between inputs and
@@ -276,15 +203,7 @@
      [ui/hideable
       (ui/maps-to-html (map flatten-map correlation-results))]
      [ui/hideable
-      [rt/reagent-table
-       correlation-results-atom
-       {:column-model
-        ; TODO write a function to generate this
-        [{:path [:input] :header "Input" :key :input}
-         {:path [:biomarker] :header "Biomarker" :key :biomarker}
-         {:path [:regression-results :slope] :header "Slope" :key :slope}]
-        :render-cell cell-fn
-        :sort sort-fn}]]
+      (ui/reagent-table correlation-results-atom)]
      [:h3 "Per-Input Table"]
      [ui/hideable
       (ui/maps-to-html (make-per-input-correlation-results
