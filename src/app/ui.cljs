@@ -51,6 +51,7 @@
 
 
 ; --- Reagent Table Logic ---------------------------
+; See https://github.com/Frozenlock/reagent-table/blob/master/dev/reagent_table/dev.cljs
 
 (defn- cell-data
   "Resolve the data within a row for a specific column"
@@ -129,7 +130,6 @@
 
 (defn- get-column-model
   [flattened-data]
-  (prn flattened-data)
   (into [] (for [k (keys (first flattened-data))]
              {:path [k] :header (name k) :key k})))
 
