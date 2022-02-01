@@ -47,8 +47,8 @@
     (for [input (get-vars input-data)
           biomarker (get-vars biomarker-data)]
       {:input input :biomarker biomarker
-       :regression-results (stats/calc-linear-regression input biomarker
-                                                         merged-data)})))
+       :regression-results (stats/calc-correlation input biomarker
+                                                   merged-data)})))
 
 (defn filter-insignificant
   "Filter row maps from the input that show statistically insignificant
@@ -66,6 +66,19 @@
   "
   [rows])
 
+; TODO we may need to introduce a concept of "up is good" and "down is bad" so
+; that this score instead takes the difference between "good" and "bad"
+; correlations, not just positive and negative ones.
+(>defn calc-counted-score
+  "Sums up all postive correlations and all negatives correlations, then takes
+  the difference."
+  [correlations]
+  [:app.specs/pairwise-correlations
+   => int?]
+  (reduce + (map #(if (neg? (:slope (:regression-results %))) -1 1)
+                 correlations)))
+  
+
 (>defn get-significant-correlations
   [data one-var one-var-value many-var]
   [:app.specs/pairwise-correlations keyword? keyword? keyword?
@@ -74,7 +87,7 @@
   (let [one-var-significant-correlations
         (one-var-value (group-by one-var (filter-insignificant data)))]
     {:one-var one-var-value
-     :score 0 ; TODO calculate and add here
+     :score (calc-counted-score one-var-significant-correlations)
      :average 0.0 ; TODO calculate and add here
      :correlations (for [correlation one-var-significant-correlations]
                      {:many-var (many-var correlation)
@@ -93,26 +106,26 @@
                        ; far as ghostwheel is concerned
   [data]
   [:app.specs/one-to-many-correlation => :app.specs/hiccup]
-  [:div]
-  [:table
-    [:tbody
-;  https://www.w3schools.com/html/html_table_headers.asp
-     [:tr [:th {:colSpan 4} [:a {:id (:one-var data)} (:one-var data)]]]
-     [:tr [:th {:colSpan 1} :score] [:td {:colSpan 1} (:score data)]]
-     [:tr [:th {:colSpan 1} :average] [:td {:colSpan 1} (:average data)]]
-     [:tr [:th "Correlate"] 
-       (for [k (-> data
-                   :correlations
-                   first
-                   :regression-results
-                   keys)]
-         [:th k])]
-     (for [correlations (:correlations data)]
-       [:tr ^{:key (random-uuid)}
-        [:td [:a {:href (st/join ["#" (name (:many-var correlations))])}
-                 (:many-var correlations)]]
-        (for [v (vals (:regression-results correlations))]
-          ^{:key (random-uuid)} [:td v])])]])
+  [:div
+    [:table
+      [:tbody
+  ;  https://www.w3schools.com/html/html_table_headers.asp
+       [:tr [:th {:colSpan 4} [:a {:id (:one-var data)} (:one-var data)]
+             ", Counted score of " (:score data)
+             ", Average value " (:average data)]]
+       [:tr [:th "Correlate"] 
+         (for [k (-> data
+                     :correlations
+                     first
+                     :regression-results
+                     keys)]
+           [:th k])]
+       (for [correlations (:correlations data)]
+         [:tr ^{:key (random-uuid)}
+          [:td [:a {:href (st/join ["#" (name (:many-var correlations))])}
+                   (:many-var correlations)]]
+          (for [v (vals (:regression-results correlations))]
+            ^{:key (random-uuid)} [:td v])])]]])
 
 (>defn make-pairwise-significant-correlations-html
   [correlations]

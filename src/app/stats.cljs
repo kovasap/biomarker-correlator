@@ -2,7 +2,10 @@
   (:require
    [clojure.string :as st]
    [app.specs :as specs]
-   [kixi.stats.core :as kixi-c]
+   [kixi.stats.math :refer [sq sqrt]]
+   [kixi.stats.core :as kixi]
+   [kixi.stats.test :as kixi-t]
+   [kixi.stats.distribution :as kixi-d]
    [kixi.stats.protocols :as kixi-p]))
 
 ; model is [offset slope]
@@ -25,7 +28,7 @@
   (if (nil? linear-model)
     nil
     (transduce
-     identity (kixi-c/r-squared
+     identity (kixi/r-squared
                #(compute-linear-estimate linear-model (var1 %))
                var2)
      data)))
@@ -40,16 +43,35 @@
 (defn round [n]
   (/ (Math/round (* 1000 (+ n (. js/Number -EPSILON)))) 1000))
 
-(defn calc-linear-regression [var1 var2 data]
+(defn get-correlation-with-pval
+  "Gets a correlation between the two given vars in the data.
+  
+  See discussion at https://github.com/MastodonC/kixi.stats/issues/40 for some
+  more context"
+  [data var1 var2]
+  (let [r (transduce identity (kixi/correlation var1 var2) data)
+        degrees-of-freedom (- (count data) 2)
+        t-stat (/ (* r (sqrt degrees-of-freedom)
+                     (sqrt (- 1 (sq r)))))
+        t-test (kixi-t/test-result t-stat (kixi-d/t {:v degrees-of-freedom}))
+        p-val ()]))
+        
+  
+
+(defn calc-correlation [var1 var2 data]
   (let [cleaned-data (filter-missing data var1 var2)
         linear-result (transduce identity
-                                 (kixi-c/simple-linear-regression var1 var2)
+                                 (kixi/simple-linear-regression var1 var2)
                                  cleaned-data)
         correlation-result (transduce identity
-                                      (kixi-c/correlation var1 var2)
+                                      (kixi/correlation var1 var2)
                                       cleaned-data)
+        degrees-of-freedom (- (count cleaned-data) 2)
+        correlation-p-val ()
+        t-stat (/ (* r (sqrt degrees-of-freedom)
+                     (sqrt (- 1 (sq r)))))
         error (transduce identity
-                         (kixi-c/regression-standard-error var1 var2)
+                         (kixi/regression-standard-error var1 var2)
                          cleaned-data)
         rsq (calc-rsq linear-result var1 var2 cleaned-data)]
     {:slope (round (if (nil? linear-result) nil
