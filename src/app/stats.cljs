@@ -54,8 +54,9 @@
         t-stat (/ (* r (sqrt degrees-of-freedom)
                      (sqrt (- 1 (sq r)))))
         t-test (kixi-t/test-result t-stat (kixi-d/t {:v degrees-of-freedom}))
-        p-val ()]))
-        
+        p-val (kixi-t/p-value t-test)]
+    {:correlation r
+     :p-value p-val}))
   
 
 (defn calc-correlation [var1 var2 data]
@@ -63,20 +64,14 @@
         linear-result (transduce identity
                                  (kixi/simple-linear-regression var1 var2)
                                  cleaned-data)
-        correlation-result (transduce identity
-                                      (kixi/correlation var1 var2)
-                                      cleaned-data)
-        degrees-of-freedom (- (count cleaned-data) 2)
-        correlation-p-val ()
-        t-stat (/ (* r (sqrt degrees-of-freedom)
-                     (sqrt (- 1 (sq r)))))
+        correlation-result (get-correlation-with-pval cleaned-data var1 var2)
         error (transduce identity
                          (kixi/regression-standard-error var1 var2)
                          cleaned-data)
         rsq (calc-rsq linear-result var1 var2 cleaned-data)]
-    {:slope (round (if (nil? linear-result) nil
-                       (last (kixi-p/parameters linear-result))))
-     :correlation (round correlation-result)
-     :error (round error)
-     :rsq (round rsq)
+    {:linear-slope (round (if (nil? linear-result) nil
+                              (last (kixi-p/parameters linear-result))))
+     :linear-r-squared (round rsq)
+     :correlation (round (:correlation correlation-result))
+     :correlation-p-value (round (:p-value correlation-result))
      :datapoints (count cleaned-data)}))

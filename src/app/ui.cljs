@@ -25,12 +25,12 @@
   [(s/coll-of map?) => :app.specs/hiccup]
   (let [sorted-pairs (map map-to-sorted-pairs maps)]
     [:table
-     [:tbody
-      ^{:key (random-uuid)} [:tr (for [k (map first (first sorted-pairs))]
-                                   ^{:key (random-uuid)} [:th k])]
-      (for [pairs sorted-pairs]
-        ^{:key (random-uuid)} [:tr (for [r (map peek pairs)]
-                                     ^{:key (random-uuid)} [:td r])])]]))
+     (into [:tbody
+            (into [:tr] (for [k (map first (first sorted-pairs))]
+                          [:th k]))]
+           (for [pairs sorted-pairs]
+             (into [:tr] (for [r (map peek pairs)]
+                           [:td r]))))]))
 
 (defn hideable
   "Adds a clickable hide button to the component.

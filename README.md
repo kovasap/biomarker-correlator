@@ -4,7 +4,7 @@
 
 - Improve table appearance with
   https://github.com/Frozenlock/reagent-table/blob/master/dev/reagent_table/dev.cljs
-- Calculate p-values: https://github.com/MastodonC/kixi.stats/issues/40
+- Show correlation plot when hovering over a correlation.
 
 ## Libraries to use:
 
@@ -26,6 +26,11 @@
  - https://github.com/metosin/spec-tools/blob/master/docs/02_data_specs.md
  - https://github.com/gnl/ghostwheel
  - Tutorial: https://www.youtube.com/watch?v=5OuOnJXLxVE
+
+To use print statements `(prn)` in a ghostwheel `>defn`, you need to add 
+`{::g/ignore-fx true}` right after the function docstring to avoid
+"side-effect" errors.
+
 
 ### Stats
 

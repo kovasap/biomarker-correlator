@@ -54,7 +54,7 @@
   "Filter row maps from the input that show statistically insignificant
   correlations"
   [rows]
-  (filter #(> (:rsq (:regression-results %)) 0.05) rows))
+  (filter #(< (:correlation-p-value (:regression-results %)) 0.05) rows))
 
 (defn make-significant-table
   "Creates a list of maps showing statistically significant results only with
@@ -102,30 +102,30 @@
   data      | 0 | 0 | 0
   ...
   "
-  {::g/ignore-fx true} ; I think the random-uuid calls trigger side effects as
-                       ; far as ghostwheel is concerned
   [data]
   [:app.specs/one-to-many-correlation => :app.specs/hiccup]
   [:div
     [:table
       [:tbody
   ;  https://www.w3schools.com/html/html_table_headers.asp
-       [:tr [:th {:colSpan 4} [:a {:id (:one-var data)} (:one-var data)]
+       [:tr [:th {:colSpan 4}
+             [:a {:id (:one-var data)} (:one-var data)]
              ", Counted score of " (:score data)
              ", Average value " (:average data)]]
-       [:tr [:th "Correlate"] 
-         (for [k (-> data
-                     :correlations
-                     first
-                     :regression-results
-                     keys)]
-           [:th k])]
+       [:tr [:th "Correlate"]
+        (for [k (-> data
+                    :correlations
+                    first
+                    :regression-results
+                    keys)]
+          [:th {:key (str k "-head")} k])]
        (for [correlations (:correlations data)]
-         [:tr ^{:key (random-uuid)}
-          [:td [:a {:href (st/join ["#" (name (:many-var correlations))])}
-                   (:many-var correlations)]]
-          (for [v (vals (:regression-results correlations))]
-            ^{:key (random-uuid)} [:td v])])]]])
+         (let [mvar (name (:many-var correlations))]
+           [:tr {:key (str mvar "-row")} 
+            [:td [:a {:href (str "#" mvar)} mvar]]
+            (for [[k v] (:regression-results correlations)]
+              [:td {:key (str mvar "-" k)} v])]))]]])
+
 
 (>defn make-pairwise-significant-correlations-html
   [correlations]
@@ -133,14 +133,18 @@
   (let [unique-inputs (set (map #(:input %) correlations))
         unique-biomarkers (set (map #(:biomarker %) correlations))]
     [:div
-      [:div (for [input unique-inputs]
-              (make-significant-correlations-html
-                (get-significant-correlations
-                  correlations :input input :biomarker)))]
-      [:div (for [biomarker unique-biomarkers]
-              (make-significant-correlations-html
-                (get-significant-correlations
-                  correlations :biomarker biomarker :input)))]]))
+     [:h4 "Input Correlations"]
+     (into [:div]
+           (for [input unique-inputs]
+             (make-significant-correlations-html
+               (get-significant-correlations
+                 correlations :input input :biomarker))))
+     [:h4 "Biomarker Correlations"]
+     (into [:div]
+           (for [biomarker unique-biomarkers]
+             (make-significant-correlations-html
+               (get-significant-correlations
+                 correlations :biomarker biomarker :input))))]))
 
 (defn flatten-map
   "Converts map like {:input :hi :results {:slope 50}} to
