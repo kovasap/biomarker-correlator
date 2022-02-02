@@ -32,3 +32,13 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+.hide {
+  display: none;
+  position: absolute;
+  z-index: 100;
+}
+
+.label:hover + .hide {
+  display: block;
+}

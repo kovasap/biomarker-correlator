@@ -200,9 +200,9 @@
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
          :as state} @csv/csv-data
-        correlation-results (compute-correlations input-data biomarker-data)
-        correlation-results-atom (r/atom
-                                   (map flatten-map correlation-results))]
+        results (compute-correlations input-data biomarker-data)
+        flat-results (map flatten-map results)
+        results-atom (r/atom flat-results)]
     [:div.app.content
      [:h1.title "Biomarker Correlator"]
      [:p "This application calculates cross correlations between inputs and
@@ -218,17 +218,17 @@
       [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
      [:h3 "Pairwise Table"]
      [ui/hideable
-      (ui/maps-to-html (map flatten-map correlation-results))]
+      (ui/maps-to-html flat-results)]
      [ui/hideable
-      (ui/reagent-table correlation-results-atom)]
+      (ui/reagent-table results-atom)]
      [:h3 "Per-Input Table"]
      [ui/hideable
       (ui/maps-to-html (make-per-input-correlation-results
-                        correlation-results))]
+                        results))]
      [:h3 "Significant Correlations"]
-     (if (nil? correlation-results)  ; TODO remove if unnecessary
+     (if (nil? results)  ; TODO remove if unnecessary
        [:div]
-       (make-pairwise-significant-correlations-html correlation-results))]))
+       (make-pairwise-significant-correlations-html results))]))
 
 ; Run ghostwheel generative tests
 ; TODO determine if there is a better place for this.
