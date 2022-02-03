@@ -3,7 +3,14 @@
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [reagent-table.core :as rt]
    [reagent.core :as r]
+   ; ["react-data-grid" :default DataGrid]
    [cljs.spec.alpha :as s]))
+
+; (defn maps-to-datagrid
+;   [maps]
+;   [(r/adapt-react-class DataGrid)
+;    {:columns (map #({:key % :name (name %)}) (keys (first maps)))
+;     :rows maps}])
 
 ; Beware sorting maps directly - it's been unreliable.  It's better to convert
 ; to lists of 2-vectors and sort those.
@@ -48,6 +55,28 @@
          "Click to hide/show"]
         [:div {:style {:display (if @hidden "none" "block")}}
          component]])))
+
+
+(defn hover-to-render
+  "Wraps a component in a function that only shows and renders it when an
+  element is hovered.
+
+  Note this depends on some CSS classes in site.css.
+
+  Original inspiration:
+  https://www.reddit.com/r/Clojure/comments/sihk4b/comment/hv8xrh6/
+  "
+  [_]
+  (let [hidden (r/atom true)]
+    (fn [hoverable hidable]
+      [:div
+        [:div {:on-mouse-over #(reset! hidden false)
+               :on-mouse-out #(reset! hidden true)}
+         hoverable]
+        (if @hidden
+          nil
+          [:div {:style {:position "absolute" :z-index 100}}
+           hidable])])))
 
 
 ; --- Reagent Table Logic ---------------------------

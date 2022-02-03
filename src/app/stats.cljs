@@ -73,18 +73,27 @@
     {:linear-slope (round (if (nil? linear-result) nil
                               (last (kixi-p/parameters linear-result))))
      :linear-r-squared (round rsq)
-     :vega-scatterplot [:div
-                        [:div.label "Hover for plot"]
-                        [:div.hide
-                         [oz.core/vega-lite
-                           {:data {:values cleaned-data}
-                            :width 300
-                            :height 300
-                            :mark "circle"
-                            :encoding {:x {:field var1
-                                           :type "quantitative"}
-                                       :y {:field var2
-                                           :type "quantitative"}}}]]]
+     :vega-scatterplot [oz.core/vega-lite
+                         {:data {:values cleaned-data}
+                          :width 300
+                           :height 300
+                           :mark "circle"
+                           :encoding {:x {:field var1
+                                          :type "quantitative"}
+                                      :y {:field var2
+                                          :type "quantitative"}}}]
+     ; :vega-scatterplot [:div
+     ;                    [:div.label "Hover for plot"]
+     ;                    [:div.hide
+     ;                     [oz.core/vega-lite
+     ;                       {:data {:values cleaned-data}
+     ;                        :width 300
+     ;                        :height 300
+     ;                        :mark "circle"
+     ;                        :encoding {:x {:field var1
+     ;                                       :type "quantitative"}
+     ;                                   :y {:field var2
+     ;                                       :type "quantitative"}}}]])
      :correlation (round (:correlation correlation-result))
      :correlation-p-value (round (:p-value correlation-result))
      :datapoints (count cleaned-data)}))

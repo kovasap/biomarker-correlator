@@ -122,8 +122,11 @@
        (for [correlations (:correlations data)]
          (let [mvar (name (:many-var correlations))]
            [:tr {:key (str mvar "-row")} 
-            [:td [:a {:href (str "#" mvar)} mvar]]
-            (for [[k v] (:regression-results correlations)]
+            [:td [ui/hover-to-render
+                  [:a {:href (str "#" mvar)} mvar]
+                  (:vega-scatterplot (:regression-results correlations))]]
+            (for [[k v] (dissoc (:regression-results correlations)
+                                :vega-scatterplot)]
               [:td {:key (str mvar "-" k)} v])]))]]])
 
 
@@ -219,6 +222,8 @@
      [:h3 "Pairwise Table"]
      [ui/hideable
       (ui/maps-to-html flat-results)]
+     ; [ui/hideable
+     ;  (ui/maps-to-datagrid flat-results)]
      [ui/hideable
       (ui/reagent-table results-atom)]
      [:h3 "Per-Input Table"]
