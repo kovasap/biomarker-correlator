@@ -117,6 +117,7 @@
                     :correlations
                     first
                     :regression-results
+                    (#(dissoc % :vega-scatterplot))
                     keys)]
           [:th {:key (str k "-head")} k])]
        (for [correlations (:correlations data)]
