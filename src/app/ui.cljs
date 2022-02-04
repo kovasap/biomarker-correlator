@@ -3,8 +3,18 @@
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [reagent-table.core :as rt]
    [reagent.core :as r]
+   [oz.core :as oz]
    ; ["react-data-grid" :default DataGrid]
    [cljs.spec.alpha :as s]))
+
+(defn value-to-str
+  "Converts a given value into something displayable by an html tabl."
+  [value]
+  (cond
+    (map? value) "{...}"
+    :else value))
+
+; (value-to-str {:test "map"})
 
 ; (defn maps-to-datagrid
 ;   [maps]
@@ -37,7 +47,7 @@
                           [:th k]))]
            (for [pairs sorted-pairs]
              (into [:tr] (for [r (map peek pairs)]
-                           [:td r]))))]))
+                           [:td (value-to-str r)]))))]))
 
 (defn hideable
   "Adds a clickable hide button to the component.
@@ -60,8 +70,6 @@
 (defn hover-to-render
   "Wraps a component in a function that only shows and renders it when an
   element is hovered.
-
-  Note this depends on some CSS classes in site.css.
 
   Original inspiration:
   https://www.reddit.com/r/Clojure/comments/sihk4b/comment/hv8xrh6/

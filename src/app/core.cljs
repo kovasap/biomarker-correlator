@@ -205,8 +205,12 @@
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
          :as state} @csv/csv-data
         results (compute-correlations input-data biomarker-data)
-        flat-results (map flatten-map results)
-        results-atom (r/atom flat-results)]
+        results-without-plots (map
+                               #(update-in % [:regression-results]
+                                           dissoc :vega-scatterplot)
+                               results)
+        flat-results (map flatten-map results-without-plots)
+        flat-results-atom (r/atom flat-results)]
     [:div.app.content
      [:h1.title "Biomarker Correlator"]
      [:p "This application calculates cross correlations between inputs and
@@ -226,11 +230,11 @@
      ; [ui/hideable
      ;  (ui/maps-to-datagrid flat-results)]
      [ui/hideable
-      (ui/reagent-table results-atom)]
+      (ui/reagent-table flat-results-atom)]
      [:h3 "Per-Input Table"]
-     [ui/hideable
-      (ui/maps-to-html (make-per-input-correlation-results
-                        results))]
+     ; [ui/hideable
+     ;  (ui/maps-to-html (make-per-input-correlation-results
+     ;                    results))]
      [:h3 "Significant Correlations"]
      (if (nil? results)  ; TODO remove if unnecessary
        [:div]

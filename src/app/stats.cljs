@@ -52,16 +52,22 @@
   [data var1 var2]
   (let [r (transduce identity (kixi/correlation var1 var2) data)
         degrees-of-freedom (- (count data) 2)
-        t-stat (/ (* r (sqrt degrees-of-freedom)
-                     (sqrt (- 1 (sq r)))))
+        t-stat (/ (* r (sqrt degrees-of-freedom))
+                  (sqrt (- 1 (sq r))))
         t-test (kixi-t/test-result t-stat (kixi-d/t {:v degrees-of-freedom}))
         p-val (kixi-t/p-value t-test)]
     {:correlation r
      :p-value p-val}))
-  
+
+(defn get-plot-scale
+  [variable data]
+  (let [var-data (map variable data)]
+    {:domain [(apply min var-data)
+              (apply max var-data)]}))
 
 (defn calc-correlation [var1 var2 data]
-  (let [cleaned-data (filter-missing data var1 var2)
+  (let [cleaned-data (map #(select-keys % [var1 var2])
+                          (filter-missing data var1 var2))
         linear-result (transduce identity
                                  (kixi/simple-linear-regression var1 var2)
                                  cleaned-data)
@@ -70,18 +76,22 @@
                          (kixi/regression-standard-error var1 var2)
                          cleaned-data)
         rsq (calc-rsq linear-result var1 var2 cleaned-data)]
+    ; (if (and (= var1 :folate) (= var2 :glucose))
+    ;   (do (prn cleaned-data) (prn correlation-result))
     {:linear-slope (round (if (nil? linear-result) nil
                               (last (kixi-p/parameters linear-result))))
      :linear-r-squared (round rsq)
      :vega-scatterplot [oz.core/vega-lite
-                         {:data {:values cleaned-data}
-                          :width 300
-                           :height 300
-                           :mark "circle"
-                           :encoding {:x {:field var1
-                                          :type "quantitative"}
-                                      :y {:field var2
-                                          :type "quantitative"}}}]
+                        {:data {:values cleaned-data}
+                         :width 300
+                         :height 300
+                         :mark "circle"
+                         :encoding {:x {:field var1
+                                        :scale (get-plot-scale var1 data)
+                                        :type "quantitative"}
+                                    :y {:field var2
+                                        :scale (get-plot-scale var2 data)
+                                        :type "quantitative"}}}]
      ; :vega-scatterplot [:div
      ;                    [:div.label "Hover for plot"]
      ;                    [:div.hide

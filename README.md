@@ -20,6 +20,7 @@
  - https://purelyfunctional.tv/guide/reagent/
  - https://github.com/reagent-project/reagent#examples
  - https://github.com/reagent-project/reagent/blob/master/doc/CreatingReagentComponents.md
+ - https://github.com/reagent-project/reagent/blob/master/doc/InteropWithReact.md#creating-reagent-components-from-react-components
 
 ### Spec
 
