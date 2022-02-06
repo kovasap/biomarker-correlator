@@ -5,17 +5,12 @@
    [app.csv :as csv]
    [app.stats :as stats]
    [app.specs :as specs]
+   [app.utils :as utils]
    [app.ui :as ui]
    [clojure.string :as st]
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [reagent.core :as r]
    [reagent.dom :as d]))
-
-;; TODO Split this code into multiple files and clean it up.
-;; TODO Make a table with columns like this:
-;; Food | Significant biomarker correlation 1 | ... | +1/-1 Correlation Sum | Another Aggregation
-;; TODO Make a table with columns like this:
-;; Biomarker | Significant food correlation 1 | ... | +1/-1 Correlation Sum | Another Aggregation
 
 ; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec
@@ -39,11 +34,28 @@
   [data]
   (filter #(not= % :date) (keys (first data))))
 
+(>defn add-timestamps
+  [data]
+  [:app.specs/dated-rows => :app.specs/dated-rows]
+  (map #(assoc % :timestamp (utils/map-to-timestamp
+                              (utils/parse-date-range
+                                (:date %))))
+       data))
+
+(>defn floatify-data
+  [data]
+  [:app.specs/dated-rows => :app.specs/dated-rows]
+  (map #(into {} (map (fn [[k v]] [k (js/parseFloat v)]) %)) data))
+
+(floatify-data [{:a "100" :b "20"}])
+
 (>defn compute-correlations
   [input-data biomarker-data]
   [:app.specs/dated-rows :app.specs/dated-rows
    => :app.specs/pairwise-correlations]
-  (let [merged-data (merge-rows-using-dates input-data biomarker-data)]
+  (let [merged-data (-> (merge-rows-using-dates input-data biomarker-data)
+                        add-timestamps
+                        floatify-data)]
     (for [input (get-vars input-data)
           biomarker (get-vars biomarker-data)]
       {:input input :biomarker biomarker
@@ -232,13 +244,14 @@
      [ui/hideable
       (ui/reagent-table flat-results-atom)]
      [:h3 "Per-Input Table"]
-     ; [ui/hideable
-     ;  (ui/maps-to-html (make-per-input-correlation-results
-     ;                    results))]
+     [ui/hideable
+      (ui/maps-to-html (make-per-input-correlation-results
+                        results-without-plots))]
      [:h3 "Significant Correlations"]
-     (if (nil? results)  ; TODO remove if unnecessary
-       [:div]
-       (make-pairwise-significant-correlations-html results))]))
+     (make-pairwise-significant-correlations-html results)]))
+     ; (if (nil? results)  ; TODO remove if unnecessary
+     ;   [:div]
+     ;   (make-pairwise-significant-correlations-html results)]]))
 
 ; Run ghostwheel generative tests
 ; TODO determine if there is a better place for this.

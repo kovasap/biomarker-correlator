@@ -1,6 +1,5 @@
 (ns app.stats
   (:require
-   [clojure.string :as st]
    [oz.core :as oz]
    [app.specs :as specs]
    [kixi.stats.math :refer [sq sqrt]]
@@ -38,7 +37,7 @@
   "Remove maps from data (collection of maps) for which any of the given keys
   are not present or have nil values."
   [data & ks]
-  (filter (fn [datum] (every? #(not (st/blank? (% datum))) ks))
+  (filter (fn [datum] (every? #(not (js/isNaN (% datum))) ks))
           data))
 
 (defn round [n]
@@ -66,7 +65,7 @@
               (apply max var-data)]}))
 
 (defn calc-correlation [var1 var2 data]
-  (let [cleaned-data (map #(select-keys % [var1 var2])
+  (let [cleaned-data (map #(select-keys % [:timestamp var1 var2])
                           (filter-missing data var1 var2))
         linear-result (transduce identity
                                  (kixi/simple-linear-regression var1 var2)
@@ -76,6 +75,7 @@
                          (kixi/regression-standard-error var1 var2)
                          cleaned-data)
         rsq (calc-rsq linear-result var1 var2 cleaned-data)]
+    ; (prn (first  cleaned-data))
     ; (if (and (= var1 :folate) (= var2 :glucose))
     ;   (do (prn cleaned-data) (prn correlation-result))
     {:linear-slope (round (if (nil? linear-result) nil
@@ -91,7 +91,10 @@
                                         :type "quantitative"}
                                     :y {:field var2
                                         :scale (get-plot-scale var2 data)
-                                        :type "quantitative"}}}]
+                                        :type "quantitative"}
+                                    :color {:field :timestamp 
+                                            :scale {:type "time"
+                                                    :scheme "viridis"}}}}]
      ; :vega-scatterplot [:div
      ;                    [:div.label "Hover for plot"]
      ;                    [:div.hide
