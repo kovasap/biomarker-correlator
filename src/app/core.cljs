@@ -105,6 +105,16 @@
                      {:many-var (many-var correlation)
                       :regression-results (:regression-results correlation)})}))
 
+(>defn get-all-significant-correlations
+  [correlations one-var many-var]
+  [:app.specs/pairwise-correlations keyword? keyword?
+   => :app.specs/one-to-many-correlations]
+  (let [unique-values (set (map #(one-var %) correlations))]
+    (into {} (for [value unique-values]
+               [value
+                (get-significant-correlations
+                  correlations one-var value many-var)]))))
+
 (>defn make-significant-correlations-html
   "Creates a table like this:
            Input
@@ -141,26 +151,6 @@
             (for [[k v] (dissoc (:regression-results correlations)
                                 :vega-scatterplot)]
               [:td {:key (str mvar "-" k)} v])]))]]])
-
-
-(>defn make-pairwise-significant-correlations-html
-  [correlations]
-  [:app.specs/pairwise-correlations => :app.specs/hiccup]
-  (let [unique-inputs (set (map #(:input %) correlations))
-        unique-biomarkers (set (map #(:biomarker %) correlations))]
-    [:div
-     [:h4 "Input Correlations"]
-     (into [:div]
-           (for [input unique-inputs]
-             (make-significant-correlations-html
-               (get-significant-correlations
-                 correlations :input input :biomarker))))
-     [:h4 "Biomarker Correlations"]
-     (into [:div]
-           (for [biomarker unique-biomarkers]
-             (make-significant-correlations-html
-               (get-significant-correlations
-                 correlations :biomarker biomarker :input))))]))
 
 (defn flatten-map
   "Converts map like {:input :hi :results {:slope 50}} to
@@ -199,16 +189,24 @@
   (reduce merge
           (map get-biomarker-regression-result-keys same-input-results)))
 
+(defn add-aggregates
+  [input-significant-correlations flat-map]
+  (assoc flat-map :score (:score ((:input flat-map)
+                                  input-significant-correlations))))
+
 (defn make-per-input-correlation-results
   "Collection of maps with keys like:
   {:input 
    :biomarker1-slope
    :biomarker1-rsq
-   :biomarker1-datapoints}
+   :biomarker1-datapoints
+   :score}
   "
-  [results]
+  [results input-significant-correlations]
   (let [rows-by-input (group-by :input results)]
-    (map get-per-input-row (vals rows-by-input))))
+    (map #(add-aggregates input-significant-correlations
+                          (get-per-input-row %))
+         (vals rows-by-input))))
 
 ; ------------------------------------
 
@@ -217,6 +215,10 @@
   (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
          :as state} @csv/csv-data
         results (compute-correlations input-data biomarker-data)
+        input-significant-correlations (get-all-significant-correlations
+                                         results :input :biomarker)
+        biomarker-significant-correlations (get-all-significant-correlations
+                                             results :biomarker :input)
         results-without-plots (map
                                #(update-in % [:regression-results]
                                            dissoc :vega-scatterplot)
@@ -245,13 +247,20 @@
       (ui/reagent-table flat-results-atom)]
      [:h3 "Per-Input Table"]
      [ui/hideable
-      (ui/maps-to-html (make-per-input-correlation-results
-                        results-without-plots))]
+      (ui/maps-to-html
+        (make-per-input-correlation-results
+         results-without-plots
+         input-significant-correlations))]
      [:h3 "Significant Correlations"]
-     (make-pairwise-significant-correlations-html results)]))
-     ; (if (nil? results)  ; TODO remove if unnecessary
-     ;   [:div]
-     ;   (make-pairwise-significant-correlations-html results)]]))
+     [:div
+      [:h4 "Input Correlations"]
+      (into [:div]
+            (for [sig-correlations (vals input-significant-correlations)]
+              (make-significant-correlations-html sig-correlations)))
+      [:h4 "Biomarker Correlations"]
+      (into [:div]
+            (for [sig-correlations (vals biomarker-significant-correlations)]
+              (make-significant-correlations-html sig-correlations)))]]))
 
 ; Run ghostwheel generative tests
 ; TODO determine if there is a better place for this.

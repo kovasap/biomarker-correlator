@@ -3,9 +3,18 @@
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [reagent-table.core :as rt]
    [reagent.core :as r]
-   [oz.core :as oz]
    ; ["react-data-grid" :default DataGrid]
    [cljs.spec.alpha :as s]))
+
+; (defn maps-to-datagrid
+;   [maps]
+;   [(r/adapt-react-class DataGrid)
+;    {:columns (map #({:key % :name (name %)}) (keys (first maps)))
+;     :rows maps}])
+; 
+; (prn DataGrid)
+; (maps-to-datagrid [{:test "v1" :test2 "v2"}])
+
 
 (defn value-to-str
   "Converts a given value into something displayable by an html tabl."
@@ -15,12 +24,6 @@
     :else value))
 
 ; (value-to-str {:test "map"})
-
-; (defn maps-to-datagrid
-;   [maps]
-;   [(r/adapt-react-class DataGrid)
-;    {:columns (map #({:key % :name (name %)}) (keys (first maps)))
-;     :rows maps}])
 
 ; Beware sorting maps directly - it's been unreliable.  It's better to convert
 ; to lists of 2-vectors and sort those.

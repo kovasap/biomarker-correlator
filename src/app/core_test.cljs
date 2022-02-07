@@ -9,7 +9,8 @@
           [{:input 1 :biomarker :a :slope 2 :rsq 1 :datapoints 5}
            {:input 2 :biomarker :a :slope 2 :rsq 1 :datapoints 5}
            {:input 3 :biomarker :b :slope 2 :rsq 1 :datapoints 5}
-           {:input 4 :biomarker :b :slope 2 :rsq 1 :datapoints 5}]))))
+           {:input 4 :biomarker :b :slope 2 :rsq 1 :datapoints 5}]
+          {1 {:input 1 :score 2}}))))
 
 (deftest test-flatten-map
   (is (= {:input :hi :slope 50}

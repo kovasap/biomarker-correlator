@@ -6,8 +6,12 @@
    [cljs.core.async :refer-macros [go go-loop alt!]]
    [reagent.core :as r]))
 
-(def csv-data (r/atom {:input-data [{}]
-                       :biomarker-data [{}]}))
+(def csv-data
+  (r/atom
+    {:input-data     [{:date "1/1/2000 to 2/2/2000" :walks 2}
+                      {:date "2/2/2000 to 3/3/2000" :walks 4}]
+     :biomarker-data [{:date "1/1/2000 to 2/2/2000" :health 100}
+                      {:date "2/2/2000 to 3/3/2000" :health 90}]}))
 
 (defn maps-to-csv [maps]
   (stringify-csv (clj->js maps)))

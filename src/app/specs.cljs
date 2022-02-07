@@ -36,8 +36,10 @@
      :correlations [{:many-var keyword?
                      :regression-results ::regression-results}]}))
 (s/def ::one-to-many-correlation one-to-many-correlation)
-(s/def ::one-to-many-correlations
-  (s/coll-of ::one-to-many-correlation))
+(def one-to-many-correlations
+  (ds/spec ::one-to-many-correlations
+    {keyword? ::one-to-many-correlation}))
+(s/def ::one-to-many-correlations one-to-many-correlations)
 
 
 (s/def ::hiccup vector?)
