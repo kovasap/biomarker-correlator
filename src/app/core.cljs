@@ -241,8 +241,9 @@
      [:h3 "Pairwise Table"]
      [ui/hideable
       (ui/maps-to-html flat-results)]
+     (ui/maps-to-datagrid flat-results)
      ; [ui/hideable
-     ;  (ui/maps-to-datagrid flat-results)]
+     ;  (ui/maps-to-datagrid flat-results))
      [ui/hideable
       (ui/reagent-table flat-results-atom)]
      [:h3 "Per-Input Table"]

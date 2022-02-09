@@ -4,16 +4,17 @@
    [reagent-table.core :as rt]
    [reagent.core :as r]
    ; ["react-data-grid" :default DataGrid]
+   ["react-data-grid" :as DataGrid]
    [cljs.spec.alpha :as s]))
 
-; (defn maps-to-datagrid
-;   [maps]
-;   [(r/adapt-react-class DataGrid)
-;    {:columns (map #({:key % :name (name %)}) (keys (first maps)))
-;     :rows maps}])
-; 
-; (prn DataGrid)
-; (maps-to-datagrid [{:test "v1" :test2 "v2"}])
+(defn maps-to-datagrid
+  [maps]
+  [(r/adapt-react-class DataGrid)
+   {:columns (map (fn [m] {:key m :name (name m)}) (keys (first maps)))
+    :rows maps}])
+
+(prn DataGrid)
+(maps-to-datagrid [{:test "v1" :test2 "v2"}])
 
 
 (defn value-to-str
