@@ -241,7 +241,7 @@
      [:h3 "Pairwise Table"]
      [ui/hideable
       (ui/maps-to-html flat-results)]
-     (ui/maps-to-datagrid flat-results)
+     (ui/maps-to-datagrid-v7 flat-results)
      ; [ui/hideable
      ;  (ui/maps-to-datagrid flat-results))
      [ui/hideable

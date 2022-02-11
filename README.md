@@ -45,6 +45,7 @@ To use print statements `(prn)` in a ghostwheel `>defn`, you need to add
 Run the app:
 ```
 npm install
+npx webpack --entry ./target/index.js --output-path public/js/libs.js
 npx shadow-cljs watch app
 ```
 

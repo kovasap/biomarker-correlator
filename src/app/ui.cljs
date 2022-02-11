@@ -3,18 +3,32 @@
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [reagent-table.core :as rt]
    [reagent.core :as r]
-   ; ["react-data-grid" :default DataGrid]
-   ["react-data-grid" :as DataGrid]
+   ["react-data-grid" :default DataGrid]
    [cljs.spec.alpha :as s]))
 
-(defn maps-to-datagrid
+
+(defn maps-to-datagrid-v7
   [maps]
-  [(r/adapt-react-class DataGrid)
-   {:columns (map (fn [m] {:key m :name (name m)}) (keys (first maps)))
+  (js/console.log DataGrid) 
+  [:> DataGrid
+   {:columns (map (fn [m] {:key m :name (name m)})
+                  (keys (first maps)))
     :rows maps}])
 
+(defn maps-to-datagrid-v6
+  [maps]
+  ; [(r/adapt-react-class DataGrid)
+  (js/console.log DataGrid) 
+  (r/create-element
+    DataGrid
+    #js {:columns (clj->js (map (fn [m] {:key m :name (name m)})
+                                (keys (first maps))))
+         :rowsCount (count maps)
+         :rowGetter (fn [i] 
+                      #js {:id 0 :title "foo"})}))
+
 (prn DataGrid)
-(maps-to-datagrid [{:test "v1" :test2 "v2"}])
+(maps-to-datagrid-v7 [{:test "v1" :test2 "v2"}])
 
 
 (defn value-to-str

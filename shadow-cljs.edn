@@ -17,6 +17,9 @@
  :builds       {:app {:target     :browser
                       :output-dir "public/js"
                       :asset-path "/js"
+                      :js-options {:js-provider :external
+                                   :external-index "target/index.js"
+                                   :resolve {:fallback {:stream false}}}
                       :modules    {:app {:entries [app.core]}}
                       :dev {:compiler-options {:external-config
                                                {:ghostwheel {}}}}

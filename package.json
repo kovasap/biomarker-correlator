@@ -1,15 +1,17 @@
 {
   "devDependencies": {
-    "shadow-cljs": ">=2.16.12"
+    "shadow-cljs": ">=2.16.12",
+    "webpack-cli": "^4.9.2"
   },
   "dependencies": {
     "bulma": "^0.9.3",
     "csv-parse": "^5.0.4",
     "csv-stringify": "^6.0.5",
     "highlight.js": "11.1.0",
-    "react": "^16.14.0",
-    "react-data-grid": "^6.1.0",
-    "react-dom": "^16.4.2",
+    "react": "^17.0.2",
+    "react-data-grid": "7.0.0-canary.30",
+    "react-dom": "^17.0.2",
+    "stream-browserify": "^3.0.0",
     "vega-embed": "^6.20.5"
   }
 }
