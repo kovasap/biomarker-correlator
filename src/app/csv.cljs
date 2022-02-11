@@ -1,7 +1,7 @@
 (ns app.csv
   (:require
-   ["csv-parse/lib/sync" :rename {parse parse-csv}]
-   ["csv-stringify/lib/sync" :rename {stringify stringify-csv}]
+   ["csv-parse/sync" :rename {parse parse-csv}]
+   ["csv-stringify/sync" :rename {stringify stringify-csv}]
    [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
    [cljs.core.async :refer-macros [go go-loop alt!]]
    [reagent.core :as r]))
@@ -13,8 +13,8 @@
      :biomarker-data [{:date "1/1/2000 to 2/2/2000" :health 100}
                       {:date "2/2/2000 to 3/3/2000" :health 90}]}))
 
-(defn maps-to-csv [maps]
-  (stringify-csv (clj->js maps)))
+; (defn maps-to-csv [maps]
+;   (stringify-csv (clj->js maps)))
 
 ;; -------- Data "Uploading" --------------------------------------------
 ;; From https://mrmcc3.github.io/blog/posts/csv-with-clojurescript/ 
@@ -27,6 +27,7 @@
            file))))
 
 (defn my-parse-csv [csv-data]
+  ; [{}])
   (js->clj
    (parse-csv csv-data (clj->js {:columns true
                                  :skip_empty_lines true

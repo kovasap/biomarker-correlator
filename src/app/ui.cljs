@@ -11,9 +11,9 @@
   [maps]
   (js/console.log DataGrid) 
   [:> DataGrid
-   {:columns (map (fn [m] {:key m :name (name m)})
-                  (keys (first maps)))
-    :rows maps}])
+   {:columns (clj->js (map (fn [m] {:key m :name (name m)})
+                         (keys (first maps))))
+    :rows (clj->js maps)}])
 
 (defn maps-to-datagrid-v6
   [maps]
