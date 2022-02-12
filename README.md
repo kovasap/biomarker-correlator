@@ -46,8 +46,10 @@ Run the app:
 ```
 npm install
 npx webpack --entry ./target/index.js --output-path public/js/libs.js
-npx shadow-cljs watch app
+npx shadow-cljs watch app test
 ```
+
+Webpack is used because of https://github.com/thheller/shadow-cljs/issues/981
 
 Run tests (results should appear in the browser at localhost:8021):
 ```

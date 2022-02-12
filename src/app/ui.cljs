@@ -4,16 +4,19 @@
    [reagent-table.core :as rt]
    [reagent.core :as r]
    ["react-data-grid" :default DataGrid]
+   [app.csv :as csv]
    [cljs.spec.alpha :as s]))
 
 
 (defn maps-to-datagrid-v7
   [maps]
-  (js/console.log DataGrid) 
-  [:> DataGrid
-   {:columns (clj->js (map (fn [m] {:key m :name (name m)})
-                         (keys (first maps))))
-    :rows (clj->js maps)}])
+  [:div
+    [:> DataGrid
+     {:columns (clj->js (map (fn [m] {:key m :name (name m)})
+                           (keys (first maps))))
+      :rows (clj->js maps)}]
+    [:button {:on-click #(csv/download-as-csv maps "data.csv")}
+     "Download as CSV"]])
 
 (defn maps-to-datagrid-v6
   [maps]

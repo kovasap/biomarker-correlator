@@ -13,8 +13,18 @@
      :biomarker-data [{:date "1/1/2000 to 2/2/2000" :health 100}
                       {:date "2/2/2000 to 3/3/2000" :health 90}]}))
 
-; (defn maps-to-csv [maps]
-;   (stringify-csv (clj->js maps)))
+(defn maps-to-csv [maps]
+  (stringify-csv (clj->js maps)))
+
+(defn download-as-csv [maps export-name]
+  (let [data-blob (js/Blob. #js [(maps-to-csv maps)]
+                            #js {:type "text/csv;charset=utf-8;"})
+        link (.createElement js/document "a")]
+    (set! (.-href link) (.createObjectURL js/URL data-blob))
+    (.setAttribute link "download" export-name)
+    (.appendChild (.-body js/document) link)
+    (.click link)
+    (.removeChild (.-body js/document) link)))
 
 ;; -------- Data "Uploading" --------------------------------------------
 ;; From https://mrmcc3.github.io/blog/posts/csv-with-clojurescript/ 
