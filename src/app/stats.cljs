@@ -98,5 +98,5 @@
                                             :scale {:type "time"
                                                     :scheme "viridis"}}}}]
      :correlation (round (:correlation correlation-result))
-     :correlation-p-value (round (:p-value correlation-result))
+     :p-value (round (:p-value correlation-result))
      :datapoints (count cleaned-data)}))

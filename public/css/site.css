@@ -50,3 +50,13 @@ a:hover {
 .red {
   background-color: red;
 }
+
+/* Vertically center text in column header 
+ * https://stackoverflow.com/a/13515693
+ */
+[role=columnheader] {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-direction: column;
+}

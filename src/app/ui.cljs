@@ -12,10 +12,10 @@
 
 (defn datagrid-column
   [k]
-  (let [[biomarker stat] (st/split (name k) #"\-\-")
-        col-name (st/join "<br/>" [biomarker stat])]
+  (let [[biomarker stat] (st/split (name k) #"\-\-")]
     {:key k
-     :name col-name
+     :name (r/as-element
+             [:div {:style {:line-height "20px"}} biomarker [:br] stat])
      :sortable true
      :cellClass
      (fn [row]
@@ -36,6 +36,9 @@
     [:div
       [:> DataGrid
        {:columns (clj->js (map datagrid-column (keys (first maps))))
+        ; This in combination with [role=columndheader] in public/css/site.css
+        ; allows for multiline column headers.
+        :headerRowHeight 60
         :defaultColumnOptions #js {:sortable true
                                    :resizable true}
         ; See
