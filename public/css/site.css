@@ -42,3 +42,11 @@ a:hover {
 .label:hover + .hide {
   display: block;
 }
+
+.green {
+  background-color: green;
+}
+
+.red {
+  background-color: red;
+}

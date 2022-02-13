@@ -8,6 +8,8 @@
    [kixi.stats.distribution :as kixi-d]
    [kixi.stats.protocols :as kixi-p]))
 
+(def p-value-cutoff 0.05)
+
 ; model is [offset slope]
 (defn compute-linear-estimate [model input]
   (let [params (kixi-p/parameters model)
@@ -67,21 +69,21 @@
 (defn calc-correlation [var1 var2 data]
   (let [cleaned-data (map #(select-keys % [:timestamp var1 var2])
                           (filter-missing data var1 var2))
-        linear-result (transduce identity
-                                 (kixi/simple-linear-regression var1 var2)
-                                 cleaned-data)
-        correlation-result (get-correlation-with-pval cleaned-data var1 var2)
-        error (transduce identity
-                         (kixi/regression-standard-error var1 var2)
-                         cleaned-data)
-        rsq (calc-rsq linear-result var1 var2 cleaned-data)]
+        ; linear-result (transduce identity
+        ;                          (kixi/simple-linear-regression var1 var2)
+        ;                          cleaned-data))
+        ; rsq (calc-rsq linear-result var1 var2 cleaned-data)
+        correlation-result (get-correlation-with-pval cleaned-data var1 var2)]
+        ; error (transduce identity
+        ;                  (kixi/regression-standard-error var1 var2)
+        ;                  cleaned-data]
     ; (prn (first  cleaned-data))
     ; (if (and (= var1 :folate) (= var2 :glucose))
     ;   (do (prn cleaned-data) (prn correlation-result))
-    {:linear-slope (round (if (nil? linear-result) nil
-                              (last (kixi-p/parameters linear-result))))
-     :linear-r-squared (round rsq)
-     :vega-scatterplot [oz.core/vega-lite
+    ; {:linear-slope (round (if (nil? linear-result) nil
+    ;                           (last (kixi-p/parameters linear-result)))]
+    ;  :linear-r-squared (round rsq)
+    {:vega-scatterplot [oz.core/vega-lite
                         {:data {:values cleaned-data}
                          :width 300
                          :height 300
@@ -95,18 +97,6 @@
                                     :color {:field :timestamp 
                                             :scale {:type "time"
                                                     :scheme "viridis"}}}}]
-     ; :vega-scatterplot [:div
-     ;                    [:div.label "Hover for plot"]
-     ;                    [:div.hide
-     ;                     [oz.core/vega-lite
-     ;                       {:data {:values cleaned-data}
-     ;                        :width 300
-     ;                        :height 300
-     ;                        :mark "circle"
-     ;                        :encoding {:x {:field var1
-     ;                                       :type "quantitative"}
-     ;                                   :y {:field var2
-     ;                                       :type "quantitative"}}}]])
      :correlation (round (:correlation correlation-result))
      :correlation-p-value (round (:p-value correlation-result))
      :datapoints (count cleaned-data)}))

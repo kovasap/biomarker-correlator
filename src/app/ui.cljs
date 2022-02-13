@@ -5,33 +5,64 @@
    [reagent.core :as r]
    ["react-data-grid" :default DataGrid]
    [app.csv :as csv]
+   [app.stats :as stats]
+   [clojure.string :as st]
    [cljs.spec.alpha :as s]))
 
 
-(defn maps-to-datagrid-v7
-  [maps]
-  [:div
-    [:> DataGrid
-     {:columns (clj->js (map (fn [m] {:key m :name (name m)})
-                           (keys (first maps))))
-      :rows (clj->js maps)}]
-    [:button {:on-click #(csv/download-as-csv maps "data.csv")}
-     "Download as CSV"]])
+(defn datagrid-column
+  [k]
+  (let [[biomarker stat] (st/split (name k) #"\-\-")
+        col-name (st/join "<br/>" [biomarker stat])]
+    {:key k
+     :name col-name
+     :sortable true
+     :cellClass
+     (fn [row]
+       (let [clj-row (js->clj row :keywordize-keys true)
+             pval-key (keyword (st/join "--" [biomarker "correlation-p-value"]))
+             is-significant (and (not (nil? (pval-key clj-row)))
+                                 (< (pval-key clj-row) stats/p-value-cutoff))]
+         (if is-significant "green" "")))
+     :frozen
+     (if (contains? #{:input :score} k)
+       true
+       false)}))
 
-(defn maps-to-datagrid-v6
+(defn maps-to-datagrid
   [maps]
-  ; [(r/adapt-react-class DataGrid)
-  (js/console.log DataGrid) 
-  (r/create-element
-    DataGrid
-    #js {:columns (clj->js (map (fn [m] {:key m :name (name m)})
-                                (keys (first maps))))
-         :rowsCount (count maps)
-         :rowGetter (fn [i] 
-                      #js {:id 0 :title "foo"})}))
+  (let [sorted-rows (r/atom maps)
+        sort-columns (r/atom [{:columnKey "input" :direction "ASC"}])]
+    [:div
+      [:> DataGrid
+       {:columns (clj->js (map datagrid-column (keys (first maps))))
+        :defaultColumnOptions #js {:sortable true
+                                   :resizable true}
+        ; See
+        ; https://github.com/adazzle/react-data-grid/blob/b7ad586498ab8a6ed3235ccfd93d3d490b24f4cc/website/demos/CommonFeatures.tsx#L330
+        ; for how to make column sorting work. See also
+        ; https://github.com/reagent-project/reagent/issues/545
+        :sortColumns (clj->js @sort-columns)
+        :onSortColumnsChange
+        (fn [newSortColumns]
+          (let [{columnKey :columnKey
+                 direction :direction} (first (js->clj newSortColumns
+                                                       :keywordize-keys true))]
+            (swap! sorted-rows
+                   #(sort (fn [m1 m2]
+                            (prn m1 m2)
+                            (let [v1 (get columnKey m1)
+                                  v2 (get columnKey m2)]
+                              (if (= direction "ASC")
+                                (< v1 v2)
+                                (> v1 v2))))
+                          %))))
+        :rows (clj->js @sorted-rows)}]
+      [:button {:on-click #(csv/download-as-csv maps "data.csv")}
+       "Download as CSV"]]))
 
 (prn DataGrid)
-(maps-to-datagrid-v7 [{:test "v1" :test2 "v2"}])
+(maps-to-datagrid [{:test "v1" :test2 "v2"}])
 
 
 (defn value-to-str

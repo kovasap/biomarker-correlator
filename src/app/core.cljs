@@ -66,17 +66,9 @@
   "Filter row maps from the input that show statistically insignificant
   correlations"
   [rows]
-  (filter #(< (:correlation-p-value (:regression-results %)) 0.05) rows))
-
-(defn make-significant-table
-  "Creates a list of maps showing statistically significant results only with
-  keys like:
-  {:input keyword?
-   :biomarker-correlations}
-  Food | Significant biomarker correlation 1 | ... | +1/-1 Correlation Sum |
-  Another Aggregation
-  "
-  [rows])
+  (filter #(< (:correlation-p-value (:regression-results %))
+              stats/p-value-cutoff)
+          rows))
 
 ; TODO we may need to introduce a concept of "up is good" and "down is bad" so
 ; that this score instead takes the difference between "good" and "bad"
@@ -178,12 +170,12 @@
 
 (defn get-biomarker-regression-result-keys
   "Converts {:input :i :biomarker :b :results {:slope 5.0}} to
-  {:input :i :b-slope 5.0}
+  {:input :i :b--slope 5.0}
   "
   [m]
   (conj {:input (:input m)}
         (into {} (for [[k v] (:regression-results m)]
-                   [(st/join "-" [(name (:biomarker m)) (name k)]) v]))))
+                   [(st/join "--" [(name (:biomarker m)) (name k)]) v]))))
 
 (defn get-per-input-row [same-input-results]
   (reduce merge
@@ -240,15 +232,12 @@
       [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
      [:h3 "Pairwise Table"]
      [ui/hideable
-      (ui/maps-to-html flat-results)]
-     (ui/maps-to-datagrid-v7 flat-results)
+       (ui/maps-to-datagrid flat-results)] 
      ; [ui/hideable
-     ;  (ui/maps-to-datagrid flat-results))
-     [ui/hideable
-      (ui/reagent-table flat-results-atom)]
+     ;   (ui/reagent-table flat-results-atom)]
      [:h3 "Per-Input Table"]
      [ui/hideable
-      (ui/maps-to-html
+      (ui/maps-to-datagrid
         (make-per-input-correlation-results
          results-without-plots
          input-significant-correlations))]
