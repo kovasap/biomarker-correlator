@@ -2,9 +2,8 @@
 
 ## TODOs
 
-- Improve table appearance with
-  https://github.com/Frozenlock/reagent-table/blob/master/dev/reagent_table/dev.cljs
-- Show correlation plot when hovering over a correlation.
+ - Add a new aggregation function that weights the importance of each biomarker
+   by its contribution to Levine's age calculator.
 
 ## Libraries to use:
 
