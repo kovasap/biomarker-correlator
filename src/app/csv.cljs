@@ -8,13 +8,21 @@
 
 (def csv-data
   (r/atom
-    {:input-data     [{:date "1/1/2000 to 2/2/2000" :walks 2}
-                      {:date "2/2/2000 to 3/3/2000" :walks 4}]
-     :biomarker-data [{:date "1/1/2000 to 2/2/2000" :health 100}
-                      {:date "2/2/2000 to 3/3/2000" :health 90}]}))
+    {:input-data
+     [{:date "1/1/00 to 2/1/00" :walks 2 :potatoes 10 :leaves 300 :climbs 1}
+      {:date "2/2/00 to 3/1/00" :walks 2 :potatoes 10 :leaves 300 :climbs 1}
+      {:date "3/2/00 to 4/1/00" :walks 3 :potatoes 15 :leaves 300 :climbs 3}
+      {:date "4/2/00 to 5/1/00" :walks 2 :potatoes 20 :leaves 300 :climbs 3}]
+     :biomarker-data
+     [{:date "1/1/00 to 2/1/00" :BW 100 :health 50 :bio-age 6 :ai-age 10}
+      {:date "2/2/00 to 3/1/00" :BW 100 :health 50 :bio-age 8 :ai-age 10}
+      {:date "3/2/00 to 4/1/00" :BW 150 :health 60 :bio-age 9 :ai-age 10}
+      {:date "4/2/00 to 5/1/00" :BW 150 :health 70 :bio-age 9 :ai-age 10}]}))
 
 (defn maps-to-csv [maps]
-  (stringify-csv (clj->js maps)))
+  (stringify-csv
+    (clj->js maps)
+    (clj->js {:header true})))
 
 (defn download-as-csv [maps export-name]
   (let [data-blob (js/Blob. #js [(maps-to-csv maps)]

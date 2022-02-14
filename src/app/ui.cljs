@@ -10,6 +10,12 @@
    [cljs.spec.alpha :as s]))
 
 
+(def px-per-character 13)
+(defn get-rough-px-width
+  "Gives a rough estimate for the pixel width of a string."
+  [string]
+  (* px-per-character (count string)))
+
 (defn datagrid-column
   [k]
   (let [[biomarker stat] (st/split (name k) #"\-\-")]
@@ -17,13 +23,18 @@
      :name (r/as-element
              [:div {:style {:line-height "20px"}} biomarker [:br] stat])
      :sortable true
+     :width (max (get-rough-px-width biomarker) (get-rough-px-width stat))
      :cellClass
      (fn [row]
        (let [clj-row (js->clj row :keywordize-keys true)
-             pval-key (keyword (st/join "--" [biomarker "correlation-p-value"]))
-             is-significant (and (not (nil? (pval-key clj-row)))
-                                 (< (pval-key clj-row) stats/p-value-cutoff))]
-         (if is-significant "green" "")))
+             pval-key (keyword (st/join "--" [biomarker "p-value"]))]
+         (cond
+           (nil? (pval-key clj-row))
+           ""
+           (< (pval-key clj-row) stats/p-value-cutoff)
+           ""
+           :else
+           "has-text-grey-lighter")))
      :frozen
      (if (contains? #{:input :score} k)
        true
@@ -53,7 +64,6 @@
                                                        :keywordize-keys true))]
             (swap! sorted-rows
                    #(sort (fn [m1 m2]
-                            (prn m1 m2)
                             (let [v1 (get columnKey m1)
                                   v2 (get columnKey m2)]
                               (if (= direction "ASC")

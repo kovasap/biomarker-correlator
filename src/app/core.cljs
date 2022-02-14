@@ -66,7 +66,7 @@
   "Filter row maps from the input that show statistically insignificant
   correlations"
   [rows]
-  (filter #(< (:correlation-p-value (:regression-results %))
+  (filter #(< (:p-value (:regression-results %))
               stats/p-value-cutoff)
           rows))
 
@@ -79,7 +79,7 @@
   [correlations]
   [:app.specs/pairwise-correlations
    => int?]
-  (reduce + (map #(if (neg? (:slope (:regression-results %))) -1 1)
+  (reduce + (map #(if (neg? (:correlation (:regression-results %))) -1 1)
                  correlations)))
   
 
@@ -137,9 +137,12 @@
        (for [correlations (:correlations data)]
          (let [mvar (name (:many-var correlations))]
            [:tr {:key (str mvar "-row")} 
-            [:td [ui/hover-to-render
-                  [:a {:href (str "#" mvar)} mvar]
-                  (:vega-scatterplot (:regression-results correlations))]]
+            ; TODO uncomment when
+            ; https://github.com/thheller/shadow-cljs/issues/988 is fixed.
+            ; [:td [ui/hover-to-render
+            ;       [:a {:href (str "#" mvar)} mvar]
+            ;       (:vega-scatterplot (:regression-results correlations))}
+            [:td [:a {:href (str "#" mvar)} mvar]]
             (for [[k v] (dissoc (:regression-results correlations)
                                 :vega-scatterplot)]
               [:td {:key (str mvar "-" k)} v])]))]]])
@@ -148,8 +151,8 @@
   "Converts map like {:input :hi :results {:slope 50}} to
   {:input :hi :slope 50}"
   [data]
-  (into {} (filter #(and (vector? %) (not (map? (last %))))
-                   (tree-seq associative? seq data))))
+  (into (sorted-map-by <) (filter #(and (vector? %) (not (map? (last %))))
+                                (tree-seq associative? seq data))))
 
 (defn flatten-map-concat-keys
   "Converts map like {:input :hi :results {:slope 50}} to
@@ -175,7 +178,8 @@
   [m]
   (conj {:input (:input m)}
         (into {} (for [[k v] (:regression-results m)]
-                   [(st/join "--" [(name (:biomarker m)) (name k)]) v]))))
+                   [(keyword (st/join "--" [(name (:biomarker m)) (name k)]))
+                    v]))))
 
 (defn get-per-input-row [same-input-results]
   (reduce merge
@@ -187,18 +191,20 @@
                                   input-significant-correlations))))
 
 (defn make-per-input-correlation-results
-  "Collection of maps with keys like:
-  {:input 
-   :biomarker1-slope
-   :biomarker1-rsq
-   :biomarker1-datapoints
-   :score}
-  "
   [results input-significant-correlations]
-  (let [rows-by-input (group-by :input results)]
-    (map #(add-aggregates input-significant-correlations
-                          (get-per-input-row %))
-         (vals rows-by-input))))
+  (let [rows-by-input (group-by :input results)
+        per-input-results (map #(add-aggregates input-significant-correlations
+                                                (get-per-input-row %))
+                               (vals rows-by-input))]
+    (prn per-input-results)
+    (map #(into (sorted-map-by
+                  (fn [a b]
+                    (cond
+                      (contains? #{:input :score} a) -1
+                      (contains? #{:input :score} b) -1
+                      :else (compare a b))))
+                %)
+         per-input-results)))
 
 ; ------------------------------------
 
@@ -230,17 +236,22 @@
       [csv/upload-btn input-file-name csv/input-upload-reqs]]
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
       [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
+     [:h3 "Per-Input Table"]
+     [:p "Not statistically significant results are displayed with greyed-out
+      text.  The score for each input is calculated as the number of
+      statistically significant correlations that are positive, minus the number
+      that are negative.  We need a spreadsheet (or something built in to the
+      app) that determines for each biomarker whether up is good or bad with
+      respect to calculating the score."]
+     (ui/maps-to-datagrid
+       (make-per-input-correlation-results
+        results-without-plots
+        input-significant-correlations))
      [:h3 "Pairwise Table"]
      [ui/hideable
        (ui/maps-to-datagrid flat-results)] 
      ; [ui/hideable
      ;   (ui/reagent-table flat-results-atom)]
-     [:h3 "Per-Input Table"]
-     [ui/hideable
-      (ui/maps-to-datagrid
-        (make-per-input-correlation-results
-         results-without-plots
-         input-significant-correlations))]
      [:h3 "Significant Correlations"]
      [:div
       [:h4 "Input Correlations"]
