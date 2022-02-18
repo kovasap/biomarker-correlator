@@ -2,6 +2,9 @@
 
 ## TODOs
 
+ - Add "Time" as a new input field derived from the date range to track how
+   different biomarkers track through time (perhaps independently of any other
+   input).
  - Add a new aggregation function that weights the importance of each biomarker
    by its contribution to Levine's age calculator.
 
