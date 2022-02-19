@@ -1,53 +1,18 @@
 (ns app.specs
   (:require
-   [spec-tools.data-spec :as ds]
-   [clojure.test.check.generators]
-   [cljs.spec.gen.alpha :as gen]
-   [cljs.spec.alpha :as s]))
+    [spec-tools.data-spec :as ds]
+    [cljs.spec.alpha :as s]
+    [clojure.test.check.generators]
+    [cljs.spec.gen.alpha :as gen]))
 
 
-(def dated-rows
-  (ds/spec ::dated-rows
-    [{:date keyword?}]))
-(s/def ::dated-rows dated-rows)
-
-
-(def regression-results
-  (ds/spec ::regression-results
-    {:slope float?
-     :rsq float?
-     :datapoints int?}))
-(s/def ::regression-results regression-results)
-
-
-(def pairwise-correlations
-  (ds/spec ::pairwise-correlations
-    [{:input keyword?
-      :biomarker keyword?
-      :regression-results ::regression-results}]))
-(s/def ::pairwise-correlations pairwise-correlations)
-
-
-(def one-to-many-correlation
-  (ds/spec ::one-to-many-correlation
-    {:one-var keyword?
-     :score int?
-     :average float?
-     :correlations [{:many-var keyword?
-                     :regression-results ::regression-results}]}))
-(s/def ::one-to-many-correlation one-to-many-correlation)
-(def one-to-many-correlations
-  (ds/spec ::one-to-many-correlations
-    {keyword? ::one-to-many-correlation}))
-(s/def ::one-to-many-correlations one-to-many-correlations)
-
+(s/def ::maps
+  (s/coll-of (s/map-of keyword? (s/or :keyword keyword?
+                                      :number number?))))
 
 (s/def ::hiccup vector?)
 
 ; (gen/generate (s/gen one-to-many-correlation))
-
-
-
 
 
 ; My structure defined using pure spec.

@@ -1,13 +1,13 @@
 (ns app.ui
   (:require
-   [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
-   [reagent-table.core :as rt]
-   [reagent.core :as r]
-   ["react-data-grid" :default DataGrid]
-   [app.csv :as csv]
-   [app.stats :as stats]
-   [clojure.string :as st]
-   [cljs.spec.alpha :as s]))
+    [app.specs]
+    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
+    [reagent-table.core :as rt]
+    [reagent.core :as r]
+    ["react-data-grid" :default DataGrid]
+    [app.csv :as csv]
+    [clojure.string :as st]
+    [cljs.spec.alpha :as s]))
 
 
 (def px-per-character 13)
@@ -16,37 +16,33 @@
   [string]
   (* px-per-character (count string)))
 
-(defn datagrid-column
+(defn make-datagrid-column
+  "Generates a react-data-grid column 
+  https://github.com/adazzle/react-data-grid/blob/929911c506919e96bd12e48ea5de68ec9511ca10/src/types.ts#L7
+  
+  '--' substrings in the input key are converted to newlines."
   [k]
-  (let [[biomarker stat] (st/split (name k) #"\-\-")]
+  (let [lines (st/split (name k) #"\-\-")]
     {:key k
      :name (r/as-element
-             [:div {:style {:line-height "20px"}} biomarker [:br] stat])
+             (into [] (concat
+                        [:div {:style {:line-height "20px"}}]
+                        (interleave lines (repeat [:br])))))
      :sortable true
-     :width (max (get-rough-px-width biomarker) (get-rough-px-width stat))
-     :cellClass
-     (fn [row]
-       (let [clj-row (js->clj row :keywordize-keys true)
-             pval-key (keyword (st/join "--" [biomarker "p-value"]))]
-         (cond
-           (nil? (pval-key clj-row))
-           ""
-           (< (pval-key clj-row) stats/p-value-cutoff)
-           ""
-           :else
-           "has-text-grey-lighter")))
-     :frozen
-     (if (contains? #{:input :score} k)
-       true
-       false)}))
+     :width (apply max (map get-rough-px-width lines))})) 
 
 (defn maps-to-datagrid
-  [maps]
+  [maps & {:keys [custom-make-datagrid-column]
+           :or {custom-make-datagrid-column (fn [_] {})}}]
+  ; Not sure how to use ghostwheel with keyed args
+  ; [:app.specs/maps => :app.specs/hiccup]
   (let [sorted-rows (r/atom maps)
         sort-columns (r/atom [{:columnKey "input" :direction "ASC"}])]
     [:div
       [:> DataGrid
-       {:columns (clj->js (map datagrid-column (keys (first maps))))
+       {:columns (clj->js (map #(merge (make-datagrid-column %)
+                                       (custom-make-datagrid-column %))
+                               (keys (first maps))))
         ; This in combination with [role=columndheader] in public/css/site.css
         ; allows for multiline column headers.
         :headerRowHeight 60
@@ -74,7 +70,6 @@
       [:button {:on-click #(csv/download-as-csv maps "data.csv")}
        "Download as CSV"]]))
 
-(prn DataGrid)
 (maps-to-datagrid [{:test "v1" :test2 "v2"}])
 
 

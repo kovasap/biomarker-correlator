@@ -1,0 +1,121 @@
+(ns app.single-var-table
+  (:require
+    [app.stats :as stats]
+    [app.ui :as ui]
+    [spec-tools.data-spec :as ds]
+    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
+    [cljs.spec.alpha :as s]))
+
+; (def one-to-many-correlation
+;   (ds/spec ::one-to-many-correlation
+;     {:one-var keyword?
+;      :aggregates {:score int?
+;                   :average float?}
+;      :correlations [{:many-var keyword?
+;                      :regression-results :app.stats/regression-results}]}))
+; (s/def ::one-to-many-correlation one-to-many-correlation)
+; (s/def ::one-to-many-correlations
+;   (s/map-of keyword? ::one-to-many-correlation))
+
+(s/def ::one-var keyword?)
+(s/def ::many-var keyword?)
+
+(s/def ::score int?)
+(s/def ::average float?)
+(s/def ::aggregates (s/keys :req-un [::score ::average]))
+
+(s/def ::correlations
+  (s/coll-of (s/keys :req-un [::many-var :app.stats/regression-results])))
+
+(s/def ::one-to-many-correlation
+  (s/keys :req-un
+          [::one-var ::aggregates ::correlations]))
+(s/def ::one-to-many-correlations
+  (s/map-of keyword? ::one-to-many-correlation))
+
+
+
+(defn filter-insignificant
+  "Filter row maps from the input that show statistically insignificant
+  correlations"
+  [rows]
+  (filter #(< (:p-value (:regression-results %))
+              stats/p-value-cutoff)
+          rows))
+
+; TODO we may need to introduce a concept of "up is good" and "down is bad" so
+; that this score instead takes the difference between "good" and "bad"
+; correlations, not just positive and negative ones.
+(>defn calc-counted-score
+  "Sums up all postive correlations and all negatives correlations, then takes
+  the difference."
+  [correlations]
+  [::pairwise-correlations
+   => int?]
+  (reduce + (map #(if (neg? (:correlation (:regression-results %))) -1 1)
+                 correlations)))
+  
+
+(>defn get-significant-correlations
+  [data one-var one-var-value many-var]
+  [::pairwise-correlations keyword? keyword? keyword?
+   | #(every? (fn [d] (contains? d one-var))  data)
+   => ::one-to-many-correlation]
+  (let [one-var-significant-correlations
+        (one-var-value (group-by one-var (filter-insignificant data)))]
+    {:one-var one-var-value
+     :aggregates {:score (calc-counted-score one-var-significant-correlations)
+                  :average 0.0} ; TODO calculate and add here
+     :correlations (for [correlation one-var-significant-correlations]
+                     {:many-var (many-var correlation)
+                      :regression-results (:regression-results correlation)})}))
+
+(>defn make-all-correlations
+  [correlations one-var many-var]
+  [::pairwise-correlations keyword? keyword?
+   => ::one-to-many-correlations]
+  (let [unique-values (set (map #(one-var %) correlations))]
+    (into {} (for [value unique-values]
+               [value
+                (get-significant-correlations
+                  correlations one-var value many-var)]))))
+
+(>defn make-hiccup
+  "Creates a table like this:
+           Input
+        Aggregate 1
+        Aggregate 2
+  Biomarker | r | p | n
+  data      | 0 | 0 | 0
+  ...
+  "
+  [data]
+  [::one-to-many-correlation => :app.specs/hiccup]
+  [:div
+    [:table
+      [:tbody
+  ;  https://www.w3schools.com/html/html_table_headers.asp
+       [:tr [:th {:colSpan 4}
+             [:a {:id (:one-var data)} (:one-var data)]
+             ", Counted score of " (:score (:aggregates data))
+             ", Average value " (:average (:aggregates data))]]
+       [:tr [:th "Correlate"]
+        (for [k (-> data
+                    :correlations
+                    first
+                    :regression-results
+                    (#(dissoc % :scatterplot))
+                    keys)]
+          [:th {:key (str k "-head")} k])]
+       (for [correlations (:correlations data)]
+         (let [mvar (name (:many-var correlations))]
+           [:tr {:key (str mvar "-row")} 
+            ; TODO uncomment when
+            ; https://github.com/thheller/shadow-cljs/issues/988 is fixed.
+            [:td [ui/hover-to-render
+                  [:a {:href (str "#" mvar)} mvar]
+                  (:scatterplot (:regression-results correlations))]]
+            ; [:td [:a {:href (str "#" mvar)} mvar]]
+            (for [[k v] (dissoc (:regression-results correlations)
+                                :scatterplot)]
+              [:td {:key (str mvar "-" k)} v])]))]]])

@@ -1,12 +1,15 @@
 (ns app.stats
   (:require
-   [oz.core :as oz]
-   [app.specs :as specs]
-   [kixi.stats.math :refer [sq sqrt]]
-   [kixi.stats.core :as kixi]
-   [kixi.stats.test :as kixi-t]
-   [kixi.stats.distribution :as kixi-d]
-   [kixi.stats.protocols :as kixi-p]))
+    [app.specs]
+    [oz.core :as oz]
+    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
+    [spec-tools.data-spec :as ds]
+    [cljs.spec.alpha :as s]
+    [kixi.stats.math :refer [sq sqrt]]
+    [kixi.stats.core :as kixi]
+    [kixi.stats.test :as kixi-t]
+    [kixi.stats.distribution :as kixi-d]
+    [kixi.stats.protocols :as kixi-p]))
 
 (def p-value-cutoff 0.05)
 
@@ -66,7 +69,18 @@
     {:domain [(apply min var-data)
               (apply max var-data)]}))
 
-(defn calc-correlation [var1 var2 data]
+(def regression-results
+  (ds/spec ::regression-results
+    {:scatterplot :app.specs/hiccup
+     :correlation float?
+     :p-value float?
+     :datapoints int?}))
+(s/def ::regression-results regression-results)
+
+(>defn calc-correlation
+  [var1 var2 data]
+  [keyword? keyword? :app.specs/maps
+   => ::regression-results]
   (let [cleaned-data (map #(select-keys % [:timestamp var1 var2])
                           (filter-missing data var1 var2))
         ; linear-result (transduce identity
@@ -83,20 +97,20 @@
     ; {:linear-slope (round (if (nil? linear-result) nil
     ;                           (last (kixi-p/parameters linear-result)))]
     ;  :linear-r-squared (round rsq)
-    {:vega-scatterplot [oz.core/vega-lite
-                        {:data {:values cleaned-data}
-                         :width 300
-                         :height 300
-                         :mark "circle"
-                         :encoding {:x {:field var1
-                                        :scale (get-plot-scale var1 data)
-                                        :type "quantitative"}
-                                    :y {:field var2
-                                        :scale (get-plot-scale var2 data)
-                                        :type "quantitative"}
-                                    :color {:field :timestamp 
-                                            :scale {:type "time"
-                                                    :scheme "viridis"}}}}]
+    {:scatterplot [oz.core/vega-lite
+                   {:data {:values cleaned-data}
+                    :width 300
+                    :height 300
+                    :mark "circle"
+                    :encoding {:x {:field var1
+                                   :scale (get-plot-scale var1 data)
+                                   :type "quantitative"}
+                               :y {:field var2
+                                   :scale (get-plot-scale var2 data)
+                                   :type "quantitative"}
+                               :color {:field :timestamp 
+                                       :scale {:type "time"
+                                               :scheme "viridis"}}}}]
      :correlation (round (:correlation correlation-result))
      :p-value (round (:p-value correlation-result))
      :datapoints (count cleaned-data)}))
