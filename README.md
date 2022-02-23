@@ -2,6 +2,8 @@
 
 ## TODOs
 
+ - Use hazard ratios and progression of biomarkers over time to try to come up
+   with a "years of life saved" if a certain biomarker is made optimal.
  - Add an embedded youtube video explaining overview of process.
  - Add "Time" as a new input field derived from the date range to track how
    different biomarkers track through time (perhaps independently of any other
