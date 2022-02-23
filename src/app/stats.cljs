@@ -74,6 +74,7 @@
     {:scatterplot :app.specs/hiccup
      :correlation float?
      :p-value float?
+     :raw-data :app.csv-data-processing/processed-rows
      :datapoints int?}))
 (s/def ::regression-results regression-results)
 
@@ -111,6 +112,7 @@
                                :color {:field :timestamp 
                                        :scale {:type "time"
                                                :scheme "viridis"}}}}]
+     :raw-data cleaned-data
      :correlation (round (:correlation correlation-result))
      :p-value (round (:p-value correlation-result))
      :datapoints (count cleaned-data)}))

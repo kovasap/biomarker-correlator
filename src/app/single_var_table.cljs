@@ -1,6 +1,7 @@
 (ns app.single-var-table
   (:require
     [app.stats :as stats]
+    [app.biomarker-data :as biodata]
     [app.ui :as ui]
     [spec-tools.data-spec :as ds]
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
@@ -80,6 +81,14 @@
                 (get-significant-correlations
                   correlations one-var value many-var)]))))
 
+(def table-keys [:correlation :p-value :datapoints])
+
+(>defn get-one-var-timeseries-data
+  [data]
+  [::one-to-many-correlation => :app.biomarker-data/timeseries-data]
+  (select-keys (:raw-data (first (:regression-results data)))
+               [:timestamp (:one-var data)]))
+
 (>defn make-hiccup
   "Creates a table like this:
            Input
@@ -99,23 +108,27 @@
              [:a {:id (:one-var data)} (:one-var data)]
              ", Counted score of " (:score (:aggregates data))
              ", Average value " (:average (:aggregates data))]]
+       [:tr [:td {:colSpan 4}
+             (if (contains? biodata/data (:one-var data))
+               (biodata/make-acm-plot
+                 (get-one-var-timeseries-data data)
+                 ((:one-var data) biodata/data))
+               "No data found for this metric.")]]
        [:tr [:th "Correlate"]
         (for [k (-> data
                     :correlations
                     first
                     :regression-results
-                    (#(dissoc % :scatterplot))
+                    (#(select-keys % table-keys))
                     keys)]
           [:th {:key (str k "-head")} k])]
-       (for [correlations (:correlations data)]
+       (for [correlations (sort-by #(:correlation (:regression-results %))
+                                   (:correlations data))]
          (let [mvar (name (:many-var correlations))]
            [:tr {:key (str mvar "-row")} 
-            ; TODO uncomment when
-            ; https://github.com/thheller/shadow-cljs/issues/988 is fixed.
             [:td [ui/hover-to-render
                   [:a {:href (str "#" mvar)} mvar]
                   (:scatterplot (:regression-results correlations))]]
-            ; [:td [:a {:href (str "#" mvar)} mvar]]
-            (for [[k v] (dissoc (:regression-results correlations)
-                                :scatterplot)]
+            (for [[k v] (select-keys (:regression-results correlations)
+                                     table-keys)]
               [:td {:key (str mvar "-" k)} v])]))]]])

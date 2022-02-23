@@ -48,15 +48,16 @@ To use print statements `(prn)` in a ghostwheel `>defn`, you need to add
 Run the app:
 ```
 npm install
+clj -A:shadow-cljs watch app
 npx webpack --entry ./target/index.js --output-path public/js/libs.js
-npx shadow-cljs watch app test
+clj -A:shadow-cljs watch app
 ```
 
 Webpack is used because of https://github.com/thheller/shadow-cljs/issues/981
 
 Run tests (results should appear in the browser at localhost:8021):
 ```
-npx shadow-cljs watch test
+clj -A:shadow-cljs watch test
 ```
 
 ### Building for production

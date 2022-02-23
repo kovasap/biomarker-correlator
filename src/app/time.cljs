@@ -27,6 +27,8 @@
 
 (s/def ::date string?)
 
+(s/def ::timestamp (s/and int? pos?))
+
 ; Outputs dates in format https://vega.github.io/vega-lite/docs/datetime.html
 (s/def ::vega-date
   (ds/spec ::vega-date {:month int?

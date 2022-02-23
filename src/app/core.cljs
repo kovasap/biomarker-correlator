@@ -4,7 +4,7 @@
   (:require
     [app.csv :as csv]
     [app.stats :as stats]
-    [app.time :as time]
+    [app.csv-data-processing :as proc]
     [app.comparison-matrix-table :as comp-matrix-tbl]
     [app.single-var-table :as single-var-table]
     [app.ui :as ui]
@@ -13,64 +13,28 @@
     [reagent.core :as r]
     [reagent.dom :as d]))
 
-(s/def ::dated-row (s/keys :req-un [:app.time/date]))
-(s/def ::dated-rows (s/coll-of ::dated-row))
-
 (s/def ::input keyword?)
 (s/def ::biomarker keyword?)
 (s/def ::pairwise-correlations 
-  (s/coll-of (s/keys :req-un [::input ::biomarker
+  (s/coll-of (s/keys :req-un [::input
+                              ::biomarker
                               :app.stats/regression-results])))
-
-
-; Returns map of dates to :dated-row maps.
-;; TODO figure out how to express this in spec
-(defn get-rows-by-dates [rows]
-  ; TODO find out how to get spec to do this assert for me
-  ; (assert (:date (first rows)))
-  (into (sorted-map) (map (fn [row] [(:date row) row]) rows)))
-
-(>defn merge-rows-using-dates
-  "Merges two sequences of row maps (e.g. from different spreadsheets) using
-  the :date field as the joining attribute."
-  [rows1 rows2]
-  [::dated-rows ::dated-rows
-   => ::dated-rows]
-  (vals (merge-with (fn [row1 row2] (merge row1 row2))
-                    (get-rows-by-dates rows1) (get-rows-by-dates rows2))))
 
 (defn get-vars
   "Gets all variables (csv columns) from parsed csv maps besides the date."
   [data]
   (filter #(not= % :date) (keys (first data))))
 
-(>defn add-timestamps
-  [data]
-  [::dated-rows => ::dated-rows]
-  (map #(assoc % :timestamp (time/map-to-timestamp
-                              (time/parse-date-range
-                                (:date %))))
-       data))
-
-(>defn floatify-data
-  [data]
-  [::dated-rows => ::dated-rows]
-  (map #(into {} (map (fn [[k v]] [k (js/parseFloat v)]) %)) data))
-
-(floatify-data [{:a "100" :b "20"}])
-
 (>defn compute-correlations
-  [input-data biomarker-data]
-  [::dated-rows ::dated-rows
+  [inputs biomarkers data]
+  [(s/coll-of keyword?) (s/coll-of keyword?)
+   :app.csv-data-processing/processed-rows
    => ::pairwise-correlations]
-  (let [merged-data (-> (merge-rows-using-dates input-data biomarker-data)
-                        add-timestamps
-                        floatify-data)]
-    (for [input (get-vars input-data)
-          biomarker (get-vars biomarker-data)]
-      {:input input :biomarker biomarker
-       :regression-results (stats/calc-correlation input biomarker
-                                                   merged-data)})))
+  (for [input inputs
+        biomarker biomarkers]
+    {:input input
+     :biomarker biomarker
+     :regression-results (stats/calc-correlation input biomarker data)}))
 
 (defn flatten-map
   "Converts map like {:input :hi :results {:slope 50}} to
@@ -80,9 +44,13 @@
                                 (tree-seq associative? seq data))))
 
 (defn home-page []
-  (let [{:keys [input-file-name biomarker-file-name input-data biomarker-data]
-         :as state} @csv/csv-data
-        pairwise-correlations (compute-correlations input-data biomarker-data)
+  (let [{:keys [input-file-name biomarker-file-name
+                input-data biomarker-data]} @csv/csv-data
+        inputs (get-vars input-data)
+        biomarkers (get-vars biomarker-data)
+        processed-data (proc/process-csv-data [input-data biomarker-data])
+        pairwise-correlations (compute-correlations
+                                inputs biomarkers processed-data)
         input-correlations (single-var-table/make-all-correlations
                              pairwise-correlations :input :biomarker)
         biomarker-correlations (single-var-table/make-all-correlations
