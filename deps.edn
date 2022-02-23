@@ -1,0 +1,19 @@
+
+{:paths ["src"]
+ :deps {io.github.kovasap/oz {:git/tag "vega-import-fix" :git/sha "4bf14e7"}
+        binaryage/devtools {:mvn/version "1.0.4"}
+        nrepl/nrepl {:mvn/version "0.8.3"}
+        cljs-http/cljs-http {:mvn/version "0.1.46"}
+        reagent/reagent {:mvn/version "1.1.0"}
+        cljfmt/cljfmt {:mvn/version "0.8.0"}
+        metosin/spec-tools {:mvn/version "0.10.5"}
+        gnl/ghostwheel {:mvn/version "0.3.9"}
+        gnl/ghostwheel.tracer {:mvn/version "0.3.9"}
+        kixi/stats {:mvn/version "0.5.4"}
+        cider/cider-nrepl {:mvn/version "0.24.0"}
+        org.clojars.frozenlock/reagent-table {:mvn/version "0.1.6"}
+        com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}}
+ :aliases
+ {:shadow-cljs
+  {:extra-deps {thheller/shadow-cljs {:mvn/version "2.16.12"}}
+   :main-opts ["-m" "shadow.cljs.devtools.cli"]}}}
