@@ -20,6 +20,12 @@
 
 ## Useful documentation
 
+### Data Extraction from Papers
+
+Use [tabula](https://github.com/tabulapdf/tabula#other-platforms-eg-linux),
+then copy paste the result and format using vim with
+https://github.com/mechatroner/rainbow_csv!
+
 ### React/Reagent
 
  - https://purelyfunctional.tv/guide/reagent/
