@@ -86,7 +86,9 @@
   {:glucose
    {:notes
     "in mg/dL, fully adjusted for age, smoking status, alcohol use, physical
-    activity, BMI, systolic blood pressure, and total cholesterol."
+    activity, BMI, systolic blood pressure, and total cholesterol.  OPEN
+    QUESTION: if we are using data corrected for these vars, do we need to
+    correct our own data for them for the comparison to be valid?"
     :source
     "10.1038/s41598-017-08498-6, Figure 2"
     :men
