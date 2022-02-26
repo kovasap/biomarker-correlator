@@ -103,35 +103,39 @@
   "
   [data]
   [::one-to-many-correlation => :app.specs/hiccup]
-  [:div
-    [:table
-      [:tbody
-  ;  https://www.w3schools.com/html/html_table_headers.asp
-       [:tr [:th {:colSpan 4}
-             [:a {:id (:one-var data)} (:one-var data)]
-             ", Counted score of " (:score (:aggregates data))
-             ", Average value " (:average (:aggregates data))]]
-       [:tr [:td {:colSpan 4}
-             (if (contains? biodata/data (:one-var data))
-               (biodata/make-acm-plot
-                 (get-one-var-timeseries-data data)
-                 ((:one-var data) biodata/data))
-               "No data found for this metric.")]]
-       [:tr [:th "Correlate"]
-        (for [k (-> data
-                    :correlations
-                    first
-                    :regression-results
-                    (#(select-keys % table-keys))
-                    keys)]
-          [:th {:key (str k "-head")} k])]
-       (for [correlations (sort-by #(:correlation (:regression-results %))
-                                   (:correlations data))]
-         (let [mvar (name (:many-var correlations))]
-           [:tr {:key (str mvar "-row")} 
-            [:td [ui/hover-to-render
-                  [:a {:href (str "#" mvar)} mvar]
-                  (:scatterplot (:regression-results correlations))]]
-            (for [[k v] (select-keys (:regression-results correlations)
-                                     table-keys)]
-              [:td {:key (str mvar "-" k)} v])]))]]])
+  (let [one-var (:one-var data)]
+    [:div
+      [:table
+        [:tbody
+    ;  https://www.w3schools.com/html/html_table_headers.asp
+         [:tr [:th {:colSpan 4}
+               [:a {:id one-var} one-var]
+               ", Counted score of " (:score (:aggregates data))
+               ", Average value " (:average (:aggregates data))]]
+         [:tr [:td {:colSpan 4}
+               (if (contains? biodata/data one-var)
+                 [:div
+                   (biodata/make-acm-plot
+                     (get-one-var-timeseries-data data)
+                     (one-var biodata/data))
+                   [:p (:notes (one-var biodata/data))]
+                   [:p "Source: " (:source (one-var biodata/data))]]
+                 "No data found for this metric.")]]
+         [:tr [:th "Correlate"]
+          (for [k (-> data
+                      :correlations
+                      first
+                      :regression-results
+                      (#(select-keys % table-keys))
+                      keys)]
+            [:th {:key (str k "-head")} k])]
+         (for [correlations (sort-by #(:correlation (:regression-results %))
+                                     (:correlations data))]
+           (let [mvar (name (:many-var correlations))]
+             [:tr {:key (str mvar "-row")} 
+              [:td [ui/hover-to-render
+                    [:a {:href (str "#" mvar)} mvar]
+                    (:scatterplot (:regression-results correlations))]]
+              (for [[k v] (select-keys (:regression-results correlations)
+                                       table-keys)]
+                [:td {:key (str mvar "-" k)} v])]))]]]))

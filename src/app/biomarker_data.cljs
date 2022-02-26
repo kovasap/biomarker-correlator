@@ -68,7 +68,7 @@
                               :type "quantitative"}
                           :color {:field :timestamp 
                                   :scale {:type "time"
-                                          :scheme "viridis"}}}}]}]))
+                                          :scheme "magma"}}}}]}]))
 
 (s/def ::value float?)
 (s/def ::hr-low float?)
