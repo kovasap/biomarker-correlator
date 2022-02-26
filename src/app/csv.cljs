@@ -17,10 +17,10 @@
       {:date "3/2/00 to 4/1/00" :walks 3 :potatoes 15 :leaves 300 :climbs 3}
       {:date "4/2/00 to 5/1/00" :walks 2 :potatoes 20 :leaves 300 :climbs 3}]
      :biomarker-data
-     [{:date "1/1/00 to 2/1/00" :BW 100 :health 50 :bio-age 6 :ai-age 10}
-      {:date "2/2/00 to 3/1/00" :BW 100 :health 50 :bio-age 8 :ai-age 10}
-      {:date "3/2/00 to 4/1/00" :BW 150 :health 60 :bio-age 9 :ai-age 10}
-      {:date "4/2/00 to 5/1/00" :BW 150 :health 70 :bio-age 9 :ai-age 10}]}))
+     [{:date "1/1/00 to 2/1/00" :BW 100 :health 50 :bio-age 6 :glucose 65}
+      {:date "2/2/00 to 3/1/00" :BW 100 :health 50 :bio-age 8 :glucose 65}
+      {:date "3/2/00 to 4/1/00" :BW 150 :health 60 :bio-age 9 :glucose 70}
+      {:date "4/2/00 to 5/1/00" :BW 150 :health 70 :bio-age 9 :glucose 80}]}))
 
 (defn maps-to-csv [maps]
   (stringify-csv

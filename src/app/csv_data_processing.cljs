@@ -2,6 +2,7 @@
   (:require
     [app.time :as time]
     [cljs.spec.alpha :as s]
+    [malli.core :as m]
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]))
 
 (s/def ::dated-row (s/keys :req-un [:app.time/date]))
@@ -11,6 +12,10 @@
 (s/def ::processed-row (s/keys :req-un [:app.time/date
                                         :app.time/timestamp]))
 (s/def ::processed-rows (s/coll-of ::processed-row))
+
+(def processed-rows
+  (m/schema [:sequential [:map [:date time/date]
+                               [:timestamp time/timestamp]]]))
 
 ; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec
@@ -25,8 +30,8 @@
   [& rows]
   [(s/coll-of ::dated-rows)
    => ::dated-rows]
-  (vals (merge-with (fn [row1 row2] (merge row1 row2))
-                    (map get-rows-by-dates rows))))
+  (vals (apply merge-with (fn [row1 row2] (merge row1 row2))
+               (map get-rows-by-dates rows))))
 
 
 (>defn add-timestamps
@@ -40,15 +45,21 @@
 (>defn floatify-data
   [data]
   [::dated-rows => ::dated-rows]
-  (map #(into {} (map (fn [[k v]] [k (js/parseFloat v)]) %)) data))
+  (map #(into {} (map (fn [[k v]]
+                        [k (if (= k :date)
+                             v
+                             (js/parseFloat v))])
+                      %))
+       data))
 
-(floatify-data [{:a "100" :b "20"}])
-
+(floatify-data [{:a "100" :b "20" :date "4/2/00 to 5/2/00"}])
 
 (>defn process-csv-data
   [& rows]
   [(s/coll-of ::dated-rows)
    => ::processed-rows]
-  (-> (merge-rows-using-dates rows)
-      add-timestamps
-      floatify-data))
+  (-> (apply merge-rows-using-dates rows)
+    add-timestamps
+    floatify-data))
+
+(process-csv-data [{:a "100" :b "20" :date "4/2/00 to 5/2/00"}])

@@ -1,7 +1,10 @@
 (ns app.stats
   (:require
     [app.specs]
+    [app.csv-data-processing]
+    [app.time :as time]
     [oz.core :as oz]
+    [malli.core :as m]
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
     [spec-tools.data-spec :as ds]
     [cljs.spec.alpha :as s]
@@ -78,10 +81,18 @@
      :datapoints int?}))
 (s/def ::regression-results regression-results)
 
-(>defn calc-correlation
+(def hiccup vector?)
+(def correlation-results
+  [:map [:scatterplot hiccup]
+        [:correlation float?]
+        [:p-value float?]
+        [:raw-data [:sequential [:map [:timestamp time/timestamp]]]]
+        [:datapoints int?]])
+
+(defn calc-correlation
   [var1 var2 data]
-  [keyword? keyword? :app.specs/maps
-   => ::regression-results]
+  ; [keyword? keyword? :app.specs/maps
+  ;  => ::regression-results]
   (let [cleaned-data (map #(select-keys % [:timestamp var1 var2])
                           (filter-missing data var1 var2))
         ; linear-result (transduce identity

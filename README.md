@@ -2,6 +2,8 @@
 
 ## TODOs
 
+ - Migrate from ghostwheel to malli:
+   https://github.com/metosin/malli/blob/master/docs/function-schemas.md
  - Use hazard ratios and progression of biomarkers over time to try to come up
    with a "years of life saved" if a certain biomarker is made optimal.
  - Add an embedded youtube video explaining overview of process.

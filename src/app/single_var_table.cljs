@@ -77,17 +77,20 @@
    => ::one-to-many-correlations]
   (let [unique-values (set (map #(one-var %) correlations))]
     (into {} (for [value unique-values]
-               [value
-                (get-significant-correlations
-                  correlations one-var value many-var)]))))
+               [value (get-significant-correlations
+                        correlations one-var value many-var)]))))
 
 (def table-keys [:correlation :p-value :datapoints])
 
 (>defn get-one-var-timeseries-data
   [data]
   [::one-to-many-correlation => :app.biomarker-data/timeseries-data]
-  (select-keys (:raw-data (first (:regression-results data)))
-               [:timestamp (:one-var data)]))
+  (map #(select-keys % [:timestamp (:one-var data)])
+       (-> data
+           :correlations
+           first
+           :regression-results
+           :raw-data)))
 
 (>defn make-hiccup
   "Creates a table like this:

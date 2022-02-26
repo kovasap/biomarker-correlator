@@ -7,27 +7,80 @@
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
     [cljs.spec.alpha :as s]))
 
-(s/def ::timeseries-data (s/and #(= 2 (count %))
-                                (s/keys :req-un [:app.time/timestamp])))
+(s/def ::timeseries-data (s/coll-of
+                           (s/and #(= 2 (count %))
+                                (s/keys :req-un [:app.time/timestamp]))))
+
+(s/def ::hr float?)
+(s/def ::hr-timeseries-data (s/coll-of
+                              (s/and #(= 3 (count %))
+                                   (s/keys :req-un [::hr
+                                                    :app.time/timestamp]))))
+
+(>defn get-var-name
+  [personal-data]
+  [::timeseries-data => keyword?]
+  (-> personal-data
+    first
+    (#(dissoc % :timestamp))
+    keys
+    first))
+
+
+(>defn add-hrs
+  "Adds hazard ratios to personal data points for plotting purposes."
+  [personal-data acm-data]
+  [::timeseries-data (s/coll-of ::hr-data) => ::hr-timeseries-data]
+  (let [var-name (get-var-name personal-data)
+        hr-to-value (into {} (for [{:keys [value hr-low hr-hi]} acm-data]
+                               [value (+ hr-low (/ (- hr-hi hr-low) 2))]))]
+    (mapv #(assoc % :hr (get hr-to-value (var-name %)))
+          personal-data)))
+
 
 (>defn make-acm-plot
-  [personal-data acm-data]
-  [::timeseries-data ? => :app.specs/hiccup]
-  [oz.core/vega-lite
-   {:data {:values cleaned-data}
-    :layer [{:mark {:type "errorband" :extent "stddev"}}
-            :encoding {:x {:field var1
-                           :scale (get-plot-scale var1 data)
-                           :type "quantitative"}
-                       :y {:field var2
-                           :scale (get-plot-scale var2 data)
-                           :type "quantitative"}
-                       :color {:field :timestamp 
-                               :scale {:type "time"
-                                       :scheme "viridis"}}}]
-    :width 300
-    :height 300
-    :mark "circle"}])
+  [personal-data bio-data]
+  ; TODO add a spec check here that ensures the key in the ::timeseries-data is
+  ; the same as the key used to access the ::biomarker-data
+  [::timeseries-data ::biomarker-data => :app.specs/hiccup]
+  ; TODO add an if statement to switch between male and female data.
+  (let [acm-data (:men bio-data)
+        var-name (get-var-name personal-data)]
+    [oz.core/vega-lite
+     {:data {:values (concat acm-data
+                             (add-hrs personal-data acm-data))}
+      :width 850
+      :height 450
+      :layer [{:mark {:type "errorband"} ; :extent "stddev"}}
+               :encoding {:x {:field :value
+                              :scale {:zero false}
+                              :type "quantitative"}
+                          :y {:field :hr-hi
+                              :scale {:zero false}
+                              :type "quantitative"}
+                          :y2 {:field :hr-low}}}
+              {:mark {:type "circle"}
+               :encoding {:x {:field var-name
+                              :scale {:zero false}
+                              :type "quantitative"}
+                          :y {:field :hr
+                              :scale {:zero false}
+                              :type "quantitative"}
+                          :color {:field :timestamp 
+                                  :scale {:type "time"
+                                          :scheme "viridis"}}}}]}]))
+
+(s/def ::value float?)
+(s/def ::hr-low float?)
+(s/def ::hr-hi float?)
+(s/def ::hr-data (s/keys :req-un [::value ::hr-low ::hr-hi]))
+
+(s/def ::notes string?)
+(s/def ::source string?)
+(s/def ::men (s/coll-of ::hr-data))
+(s/def ::women (s/coll-of ::hr-data))
+
+(s/def ::biomarker-data (s/keys :req-un [::notes ::source ::men ::women]))
 
 (def data
   {:glucose
