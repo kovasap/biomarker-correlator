@@ -51,7 +51,8 @@
                              (add-hrs personal-data acm-data))}
       :width 850
       :height 450
-      :layer [{:mark {:type "errorband"} ; :extent "stddev"}}
+      :layer [{:mark {:type "errorband"
+                      :interpolate "linear"} ; :extent "stddev"}}
                :encoding {:x {:field :value
                               :scale {:zero false}
                               :type "quantitative"}
@@ -88,7 +89,11 @@
     "in mg/dL, fully adjusted for age, smoking status, alcohol use, physical
     activity, BMI, systolic blood pressure, and total cholesterol.  OPEN
     QUESTION: if we are using data corrected for these vars, do we need to
-    correct our own data for them for the comparison to be valid?"
+    correct our own data for them for the comparison to be valid?  The stepwise
+    appearance of this graph is intentional - it is how the researchers
+    collected their data.  One thing we could do to remove the stepwise nature
+    is average the two :value points that have the same HR range and plot those
+    averaged points."
     :source
     "10.1038/s41598-017-08498-6, Figure 2"
     :men
