@@ -11,6 +11,13 @@
                                       :number number?))))
 
 (s/def ::hiccup vector?)
+(def Hiccup vector?)
+
+(defn make-hiccup
+  {:malli/schema [:=> [:cat :string] Hiccup]}
+  [s]
+  [:div s])
+  
 
 ; (gen/generate (s/gen one-to-many-correlation))
 

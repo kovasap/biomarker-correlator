@@ -1,7 +1,7 @@
 (ns app.biomarker-data
   (:require
-    [app.time]
-    [app.specs]
+    [app.time :as time]
+    [app.specs :as specs]
     [oz.core :as oz]
     [app.csv-data-processing :as proc]
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
@@ -10,14 +10,45 @@
 (s/def ::timeseries-data (s/coll-of
                            (s/and #(= 2 (count %))
                                 (s/keys :req-un [:app.time/timestamp]))))
+; TODO fix when https://github.com/metosin/malli/issues/652 is resolved
+(def TimeseriesData
+  [:sequential [:map [:timestamp time/timestamp]]])
 
 (s/def ::hr float?)
 (s/def ::hr-timeseries-data (s/coll-of
                               (s/and #(= 3 (count %))
                                    (s/keys :req-un [::hr
                                                     :app.time/timestamp]))))
+(def HRTimeseriesData
+  [:sequential [:map [:timestamp time/timestamp]
+                     [:hr float?]]])
+
+(s/def ::value float?)
+(s/def ::hr-low float?)
+(s/def ::hr-hi float?)
+(s/def ::hr-data (s/keys :req-un [::value ::hr-low ::hr-hi]))
+
+(s/def ::notes string?)
+(s/def ::source string?)
+(s/def ::men (s/coll-of ::hr-data))
+(s/def ::women (s/coll-of ::hr-data))
+
+(s/def ::biomarker-data (s/keys :req-un [::notes ::source ::men ::women]))
+
+(def HazardRatioData
+  [:sequental [:map [:value float?]
+                    [:hr-low float?]
+                    [:hr-high float?]]])
+
+(def BiomarkerData
+  [:map-of :string [:map [:notes specs/Hiccup]
+                         [:source string?]
+                         [:men HazardRatioData]
+                         [:women HazardRatioData]]])
 
 (>defn get-var-name
+  {:malli/schema [:=> [:cat TimeseriesData]
+                      :keyword]}
   [personal-data]
   [::timeseries-data => keyword?]
   (-> personal-data
@@ -29,6 +60,8 @@
 
 (>defn add-hrs
   "Adds hazard ratios to personal data points for plotting purposes."
+  {:malli/schema [:=> [:cat TimeseriesData [:sequential HazardRatioData]]
+                      HRTimeseriesData]}
   [personal-data acm-data]
   [::timeseries-data (s/coll-of ::hr-data) => ::hr-timeseries-data]
   (let [var-name (get-var-name personal-data)
@@ -39,6 +72,7 @@
 
 
 (>defn make-acm-plot
+  {:malli/schema [:=> [:cat TimeseriesData BiomarkerData] specs/Hiccup]}
   [personal-data bio-data]
   ; TODO add a spec check here that ensures the key in the ::timeseries-data is
   ; the same as the key used to access the ::biomarker-data
@@ -70,18 +104,6 @@
                           :color {:field :timestamp 
                                   :scale {:type "time"
                                           :scheme "magma"}}}}]}]))
-
-(s/def ::value float?)
-(s/def ::hr-low float?)
-(s/def ::hr-hi float?)
-(s/def ::hr-data (s/keys :req-un [::value ::hr-low ::hr-hi]))
-
-(s/def ::notes string?)
-(s/def ::source string?)
-(s/def ::men (s/coll-of ::hr-data))
-(s/def ::women (s/coll-of ::hr-data))
-
-(s/def ::biomarker-data (s/keys :req-un [::notes ::source ::men ::women]))
 
 (def data
   {:glucose

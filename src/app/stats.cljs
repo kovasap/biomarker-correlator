@@ -1,6 +1,6 @@
 (ns app.stats
   (:require
-    [app.specs]
+    [app.specs :as specs]
     [app.csv-data-processing]
     [app.time :as time]
     [oz.core :as oz]
@@ -81,9 +81,8 @@
      :datapoints int?}))
 (s/def ::regression-results regression-results)
 
-(def hiccup vector?)
 (def correlation-results
-  [:map [:scatterplot hiccup]
+  [:map [:scatterplot specs/Hiccup]
         [:correlation float?]
         [:p-value float?]
         [:raw-data [:sequential [:map [:timestamp time/timestamp]]]]

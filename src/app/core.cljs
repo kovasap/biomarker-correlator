@@ -1,20 +1,28 @@
 (ns app.core
-  #:ghostwheel.core {:check     true
-                     :num-tests 10}
+  ; #:ghostwheel.core {:check     true
+  ;                    :num-tests 10
   (:require
     [app.csv :as csv]
     [app.stats :as stats]
+    ; Load namespace for malli checking.
+    [app.biomarker-data]
+    [app.specs :as specs]
     [app.csv-data-processing :as proc]
     [app.comparison-matrix-table :as comp-matrix-tbl]
     [app.single-var-table :as single-var-table]
     [app.ui :as ui]
     [malli.core :as m]
     [malli.instrument.cljs :as mi]
+    ; Uncomment when https://github.com/metosin/malli/pull/655 is in.
     ; [malli.dev.cljs :as dev]
+    ; [malli.dev.pretty :as pretty]
     [cljs.spec.alpha :as s]
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
     [reagent.core :as r]
     [reagent.dom :as d]))
+
+; Uncomment when https://github.com/metosin/malli/pull/655 is in.
+; (dev/start! {:report (pretty/reporter)})
 
 (s/def ::input keyword?)
 (s/def ::biomarker keyword?)
@@ -23,7 +31,7 @@
                               ::biomarker
                               :app.stats/regression-results])))
 
-(def pairwise-correlations
+(def PairwiseCorrelations
   [:sequential
    [:map [:input keyword?]
          [:biomarker keyword?]
@@ -39,7 +47,7 @@
                        [:sequential keyword?]
                        [:sequential keyword?]
                        proc/processed-rows]
-                      pairwise-correlations]}
+                      PairwiseCorrelations]}
   [inputs biomarkers data]
   ; [(s/coll-of keyword?) (s/coll-of keyword?)
   ;  :app.csv-data-processing/processed-rows
