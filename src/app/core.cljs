@@ -31,32 +31,10 @@
                               ::biomarker
                               :app.stats/regression-results])))
 
-(def PairwiseCorrelations
-  [:sequential
-   [:map [:input keyword?]
-         [:biomarker keyword?]
-         [:regression-results stats/correlation-results]]])
-
 (defn get-vars
   "Gets all variables (csv columns) from parsed csv maps besides the date."
   [data]
   (filter #(not= % :date) (keys (first data))))
-
-(defn compute-correlations
-  {:malli/schema [:=> [:cat
-                       [:sequential keyword?]
-                       [:sequential keyword?]
-                       proc/processed-rows]
-                      PairwiseCorrelations]}
-  [inputs biomarkers data]
-  ; [(s/coll-of keyword?) (s/coll-of keyword?)
-  ;  :app.csv-data-processing/processed-rows
-  ;  => ::pairwise-correlations]
-  (for [input inputs
-        biomarker biomarkers]
-    {:input input
-     :biomarker biomarker
-     :regression-results (stats/calc-correlation input biomarker data)}))
 
 (defn flatten-map
   "Converts map like {:input :hi :results {:slope 50}} to
@@ -65,18 +43,29 @@
   (into (sorted-map-by <) (filter #(and (vector? %) (not (map? (last %))))
                                 (tree-seq associative? seq data))))
 
+(def CsvData
+  [:sequential [:map [:date string?]]])
+
+(defn get-datapoints
+  {:malli/schema [:=>
+                  [:cat CsvData]
+                  [:vector float?]]}
+  [data variable])
+
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name
                 input-data biomarker-data]} @csv/csv-data
         inputs (get-vars input-data)
         biomarkers (get-vars biomarker-data)
         processed-data (proc/process-csv-data input-data biomarker-data)
-        pairwise-correlations (compute-correlations
+        pairwise-correlations (stats/compute-correlations
                                 inputs biomarkers processed-data)
         input-correlations (single-var-table/make-all-correlations
-                             pairwise-correlations :input :biomarker)
+                             pairwise-correlations input-data
+                             :input :biomarker)
         biomarker-correlations (single-var-table/make-all-correlations
-                                 pairwise-correlations :biomarker :input)
+                                 pairwise-correlations biomarker-data
+                                 :biomarker :input)
         pairwise-correlations-for-table (map
                                          #(update-in % [:regression-results]
                                                      dissoc :scatterplot
@@ -119,7 +108,7 @@
       [:h4 "Input Correlations"]
       (into [:div]
             (for [sig-correlations (vals input-correlations)]
-              (single-var-table/make-hiccup sig-correlations)))
+              (single-var-table/make-hiccup sig-correlations))) 
       [:h4 "Biomarker Correlations"]
       (into [:div]
             (for [sig-correlations (vals biomarker-correlations)]

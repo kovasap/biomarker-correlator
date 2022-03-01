@@ -55,30 +55,33 @@
    => int?]
   (reduce + (map #(if (neg? (:correlation (:regression-results %))) -1 1)
                  correlations)))
-  
+
 
 (>defn get-significant-correlations
-  [data one-var one-var-value many-var]
+  [data one-var-type one-var many-var one-var-raw-data]
   [::pairwise-correlations keyword? keyword? keyword?
-   | #(every? (fn [d] (contains? d one-var))  data)
+   | #(every? (fn [d] (contains? d one-var-type))  data)
    => ::one-to-many-correlation]
   (let [one-var-significant-correlations
-        (one-var-value (group-by one-var (filter-insignificant data)))]
-    {:one-var one-var-value
+        (one-var (group-by one-var-type (filter-insignificant data)))]
+    {:one-var one-var
      :aggregates {:score (calc-counted-score one-var-significant-correlations)
-                  :average 0.0} ; TODO calculate and add here
+                  :acm-score 0
+                  :average (/ (reduce + one-var-raw-data)
+                              (count one-var-raw-data))}
      :correlations (for [correlation one-var-significant-correlations]
                      {:many-var (many-var correlation)
                       :regression-results (:regression-results correlation)})}))
 
 (>defn make-all-correlations
-  [correlations one-var many-var]
+  [correlations csv-data one-var-type many-var]
   [::pairwise-correlations keyword? keyword?
    => ::one-to-many-correlations]
-  (let [unique-values (set (map #(one-var %) correlations))]
-    (into {} (for [value unique-values]
-               [value (get-significant-correlations
-                        correlations one-var value many-var)]))))
+  (let [unique-one-vars (set (map #(one-var-type %) correlations))]
+    (into {} (for [one-var unique-one-vars]
+               [one-var (get-significant-correlations
+                          correlations one-var-type one-var many-var
+                          (mapv #(one-var %) csv-data))]))))
 
 (def table-keys [:correlation :p-value :datapoints])
 

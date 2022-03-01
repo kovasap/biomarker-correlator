@@ -1,7 +1,7 @@
 (ns app.stats
   (:require
     [app.specs :as specs]
-    [app.csv-data-processing]
+    [app.csv-data-processing :as proc]
     [app.time :as time]
     [oz.core :as oz]
     [malli.core :as m]
@@ -81,7 +81,7 @@
      :datapoints int?}))
 (s/def ::regression-results regression-results)
 
-(def correlation-results
+(def CorrelationResults
   [:map [:scatterplot specs/Hiccup]
         [:correlation float?]
         [:p-value float?]
@@ -126,3 +126,25 @@
      :correlation (round (:correlation correlation-result))
      :p-value (round (:p-value correlation-result))
      :datapoints (count cleaned-data)}))
+
+(def PairwiseCorrelations
+  [:sequential
+   [:map [:input keyword?]
+         [:biomarker keyword?]
+         [:regression-results CorrelationResults]]])
+
+(defn compute-correlations
+  {:malli/schema [:=>
+                  [:cat [:sequential keyword?]
+                        [:sequential keyword?]
+                        proc/processed-rows]
+                  PairwiseCorrelations]}
+  [inputs biomarkers data]
+  ; [(s/coll-of keyword?) (s/coll-of keyword?)
+  ;  :app.csv-data-processing/processed-rows
+  ;  => ::pairwise-correlations]
+  (for [input inputs
+        biomarker biomarkers]
+    {:input input
+     :biomarker biomarker
+     :regression-results (calc-correlation input biomarker data)}))
