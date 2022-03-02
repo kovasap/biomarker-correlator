@@ -13,6 +13,18 @@
  - Add a new aggregation function that weights the importance of each biomarker
    by its contribution to Levine's age calculator.
 
+ - Add more ACM datasets:
+
+ ```
+Hi Kovas, in the study below, I'd use the ACM plots for UK Biobank (Figure 4), but not the other study, as the Biobank study sample size is 23x larger. Uric acid, albumin, BUN, alkaline phosphatase are of relevance.
+
+https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0241558
+
+MCV: https://pubmed.ncbi.nlm.nih.gov/26630695/
+
+Hemoglobin: https://pubmed.ncbi.nlm.nih.gov/29378732/
+ ```
+
 ## Libraries to use:
 
  - CSV upload and parsing: https://mrmcc3.github.io/blog/posts/csv-with-clojurescript/
