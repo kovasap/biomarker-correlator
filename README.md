@@ -12,6 +12,10 @@
    input).
  - Add a new aggregation function that weights the importance of each biomarker
    by its contribution to Levine's age calculator.
+ - Add air quality and weather data, ideally pulled from an API automatically.
+   - Weather data could come from
+     https://www.visualcrossing.com/weather/weather-data-services
+   - See https://www.reddit.com/r/datasets/comments/t4tyan/historical_weather_and_air_quality_api_andor_bulk/
 
  - Add more ACM datasets:
 
