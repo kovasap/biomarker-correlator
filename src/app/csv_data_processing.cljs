@@ -13,9 +13,12 @@
                                         :app.time/timestamp]))
 (s/def ::processed-rows (s/coll-of ::processed-row))
 
-(def processed-rows
-  (m/schema [:sequential [:map [:date time/date]
-                               [:timestamp time/timestamp]]]))
+(def DatedRows
+  [:sequential [:map [:date time/date]]])
+
+(def ProcessedRows
+  [:sequential [:map [:date time/date]
+                     [:timestamp time/timestamp]]])
 
 ; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec

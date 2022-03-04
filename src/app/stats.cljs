@@ -137,7 +137,7 @@
   {:malli/schema [:=>
                   [:cat [:sequential keyword?]
                         [:sequential keyword?]
-                        proc/processed-rows]
+                        proc/ProcessedRows]
                   PairwiseCorrelations]}
   [inputs biomarkers data]
   ; [(s/coll-of keyword?) (s/coll-of keyword?)

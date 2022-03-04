@@ -2,8 +2,9 @@
   (:require
     [app.stats :as stats]
     [app.biomarker-data :as biodata]
+    [app.csv-data-processing :as proc]
     [app.ui :as ui]
-    [spec-tools.data-spec :as ds]
+    ; [spec-tools.data-spec :as ds]
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
     [cljs.spec.alpha :as s]))
 
@@ -34,6 +35,12 @@
 (s/def ::one-to-many-correlations
   (s/map-of keyword? ::one-to-many-correlation))
 
+(def OneToManyCorrelation
+  [:map [:one-var keyword?]
+        [:aggregates [:map [:score int?]
+                           [:average float?]]]
+        [:correlations [:map [:many-var keyword?]
+                             [:regression-results stats/CorrelationResults]]]])
 
 
 (defn filter-insignificant
@@ -57,11 +64,17 @@
                  correlations)))
 
 
-(>defn get-significant-correlations
-  [data one-var-type one-var many-var one-var-raw-data]
-  [::pairwise-correlations keyword? keyword? keyword?
-   | #(every? (fn [d] (contains? d one-var-type))  data)
-   => ::one-to-many-correlation]
+(defn get-significant-correlations
+  {:malli/schema [:=> [:cat stats/PairwiseCorrelations
+                       :keyword
+                       :keyword
+                       :keyword
+                       proc/DatedRows]
+                  OneToManyCorrelation]}
+  [data one-var-type one-var many-var-type one-var-raw-data]
+  ; [::pairwise-correlations keyword? keyword? keyword?
+  ;  | #(every? (fn [d] (contains? d one-var-type))  data)
+  ;  => ::one-to-many-correlation]
   (let [one-var-significant-correlations
         (one-var (group-by one-var-type (filter-insignificant data)))]
     {:one-var one-var
@@ -70,17 +83,22 @@
                   :average (/ (reduce + one-var-raw-data)
                               (count one-var-raw-data))}
      :correlations (for [correlation one-var-significant-correlations]
-                     {:many-var (many-var correlation)
+                     {:many-var (many-var-type correlation)
                       :regression-results (:regression-results correlation)})}))
 
-(>defn make-all-correlations
-  [correlations csv-data one-var-type many-var]
-  [::pairwise-correlations keyword? keyword?
-   => ::one-to-many-correlations]
+(defn make-all-correlations
+  {:malli/schema [:=> [:cat stats/PairwiseCorrelations
+                       proc/DatedRows
+                       :keyword
+                       :keyword]
+                  OneToManyCorrelation]}
+  [correlations csv-data one-var-type many-var-type]
+  ; [::pairwise-correlations keyword? keyword?
+  ;  => ::one-to-many-correlations]
   (let [unique-one-vars (set (map #(one-var-type %) correlations))]
     (into {} (for [one-var unique-one-vars]
                [one-var (get-significant-correlations
-                          correlations one-var-type one-var many-var
+                          correlations one-var-type one-var many-var-type
                           (mapv #(one-var %) csv-data))]))))
 
 (def table-keys [:correlation :p-value :datapoints])
