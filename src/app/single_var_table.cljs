@@ -38,9 +38,13 @@
 (def OneToManyCorrelation
   [:map [:one-var keyword?]
         [:aggregates [:map [:score int?]
-                           [:average float?]]]
+                           [:average float?]
+                           [:acm-score float?]]]
         [:correlations [:map [:many-var keyword?]
                              [:regression-results stats/CorrelationResults]]]])
+
+; TODO generate these from the OneToManyCorrelation spec above
+(def aggregate-names #{:score :average :acm-score})
 
 
 (defn filter-insignificant
@@ -65,11 +69,12 @@
 
 
 (defn get-significant-correlations
-  {:malli/schema [:=> [:cat stats/PairwiseCorrelations
+  {:malli/schema [:=> [:cat
+                       stats/PairwiseCorrelations
                        :keyword
                        :keyword
                        :keyword
-                       proc/DatedRows]
+                       [:vector float?]]
                   OneToManyCorrelation]}
   [data one-var-type one-var many-var-type one-var-raw-data]
   ; [::pairwise-correlations keyword? keyword? keyword?
@@ -79,16 +84,17 @@
         (one-var (group-by one-var-type (filter-insignificant data)))]
     {:one-var one-var
      :aggregates {:score (calc-counted-score one-var-significant-correlations)
-                  :acm-score 0
-                  :average (/ (reduce + one-var-raw-data)
-                              (count one-var-raw-data))}
+                  ; :acm-score 0
+                  :average (stats/round (/ (reduce + one-var-raw-data)
+                                         (count one-var-raw-data)))}
      :correlations (for [correlation one-var-significant-correlations]
                      {:many-var (many-var-type correlation)
                       :regression-results (:regression-results correlation)})}))
 
 (defn make-all-correlations
-  {:malli/schema [:=> [:cat stats/PairwiseCorrelations
-                       proc/DatedRows
+  {:malli/schema [:=> [:cat
+                       stats/PairwiseCorrelations
+                       proc/ProcessedRows
                        :keyword
                        :keyword]
                   OneToManyCorrelation]}

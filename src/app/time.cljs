@@ -40,12 +40,19 @@
 
 (>defn parse-date-range
   "Converts a range like '1/1/2021 to 2/1/2021' into a single date. Will return
-  the first date unless it is unparsable, in which case will return the second"
+  the first date unless it is unparsable, in which case will return the second.
+  If no 'to' is in the string, will just return the only date (if it is one)."
   [date-range]
   [::date => ::vega-date]
-  (let [[date1 date2] (st/split date-range " to ")
-        parsed1 (parse-date date1)
-        parsed2 (parse-date date2)]
-    (if (nil? parsed1)
-      parsed2
-      parsed1)))
+  (let [split-date (st/split date-range " to ")]
+    (cond
+      (= 1 (count split-date)) (parse-date (first split-date))
+      :else
+      (let [[date1 date2] split-date 
+            parsed1 (parse-date date1)
+            parsed2 (parse-date date2)]
+        (if (nil? parsed1)
+          parsed2
+          parsed1)))))
+
+(st/split "4/4/4" " to ")

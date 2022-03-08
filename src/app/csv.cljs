@@ -12,15 +12,75 @@
 (def csv-data
   (r/atom
     {:input-data
-     [{:date "1/1/00 to 2/1/00" :walks 2 :potatoes 10 :leaves 300 :climbs 1}
-      {:date "2/2/00 to 3/1/00" :walks 2 :potatoes 10 :leaves 300 :climbs 1}
-      {:date "3/2/00 to 4/1/00" :walks 3 :potatoes 15 :leaves 300 :climbs 3}
-      {:date "4/2/00 to 5/1/00" :walks 2 :potatoes 20 :leaves 300 :climbs 3}]
+     [{:date "1/1/00 to 2/1/00" :walks 2 :potatoes 10 :climbs 1 :na "1420.9"}
+      {:date "2/2/00 to 3/1/00" :walks 2 :potatoes 10 :climbs 1 :na "1545.1"}
+      {:date "3/2/00 to 4/1/00" :walks 3 :potatoes 15 :climbs 3 :na "1679.7"}
+      {:date "4/2/00 to 5/1/00" :walks 2 :potatoes 20 :climbs 3 :na "1781.2"}
+      {:date "5/2/00"  :walks 2 :potatoes 20 :climbs 3 :na "1728.9"}
+      {:date "6/2/00"  :walks 2 :potatoes 20 :climbs 3 :na "1675.3"}
+      {:date "7/2/00"  :walks 2 :potatoes 20 :climbs 3 :na "1597.8"}
+      {:date "8/2/00"  :walks 2 :potatoes 20 :climbs 3 :na "1591.8"}
+      {:date "9/2/00"  :walks 2 :potatoes 20 :climbs 3 :na "1534.1"}
+      {:date "10/2/00" :walks 2 :potatoes 20 :climbs 3 :na "1536.4"}
+      {:date "11/2/00" :walks 2 :potatoes 20 :climbs 3 :na "1588.3"}
+      {:date "12/2/00" :walks 2 :potatoes 20 :climbs 3 :na "1647.3"}
+      {:date "1/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "1703.1"}
+      {:date "2/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "1467.3"}
+      {:date "3/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "1529.2"}
+      {:date "4/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "1855.5"}
+      {:date "5/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "1687.1"}
+      {:date "6/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "2318.2"}
+      {:date "7/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "2245.4"}
+      {:date "8/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "2485.7"}
+      {:date "9/2/01"  :walks 2 :potatoes 20 :climbs 3 :na "2348.5"}
+      {:date "10/2/01" :walks 2 :potatoes 20 :climbs 3 :na "2329.4"}
+      {:date "11/2/01" :walks 2 :potatoes 20 :climbs 3 :na "2238.0"}
+      {:date "12/2/01" :walks 2 :potatoes 20 :climbs 3 :na "2243.5"}
+      {:date "1/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "2078.5"}
+      {:date "2/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "1841.9"}
+      {:date "3/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "1983.8"}
+      {:date "4/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "1917.7"}
+      {:date "5/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "2153.5"}
+      {:date "6/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "2689.4"}
+      {:date "7/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "2335.9"}
+      {:date "8/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "2114.7"}
+      {:date "9/2/02"  :walks 2 :potatoes 20 :climbs 3 :na "1966.3"}
+      {:date "10/2/02" :walks 2 :potatoes 20 :climbs 3 :na "1831.9"}]
      :biomarker-data
-     [{:date "1/1/00 to 2/1/00" :BW 100 :health 50 :bio-age 6 :glucose 65}
-      {:date "2/2/00 to 3/1/00" :BW 100 :health 50 :bio-age 8 :glucose 65}
-      {:date "3/2/00 to 4/1/00" :BW 150 :health 60 :bio-age 9 :glucose 70}
-      {:date "4/2/00 to 5/1/00" :BW 150 :health 70 :bio-age 9 :glucose 80}]}))
+     [{:date "1/1/00 to 2/1/00" :na 100 :health 50 :glucose 65 :hdl "35"}
+      {:date "2/2/00 to 3/1/00" :BW 100 :health 50 :glucose 65 :hdl "53"}
+      {:date "3/2/00 to 4/1/00" :BW 150 :health 60 :glucose 70 :hdl "49"}
+      {:date "4/2/00 to 5/1/00" :BW 150 :health 70 :glucose 80 :hdl "51"}
+      {:date "5/2/00"  :BW 150 :health 70 :glucose 80 :hdl "53"}
+      {:date "6/2/00"  :BW 150 :health 70 :glucose 80 :hdl "47"}
+      {:date "7/2/00"  :BW 150 :health 70 :glucose 80 :hdl "46"}
+      {:date "8/2/00"  :BW 150 :health 70 :glucose 80 :hdl "40"}
+      {:date "9/2/00"  :BW 150 :health 70 :glucose 80 :hdl "42"}
+      {:date "10/2/00" :BW 150 :health 70 :glucose 80 :hdl "37"}
+      {:date "11/2/00" :BW 150 :health 70 :glucose 80 :hdl "38"}
+      {:date "12/2/00" :BW 150 :health 70 :glucose 80 :hdl "41"}
+      {:date "1/2/01"  :BW 150 :health 70 :glucose 80 :hdl "36"}
+      {:date "2/2/01"  :BW 150 :health 70 :glucose 80 :hdl "45"}
+      {:date "3/2/01"  :BW 150 :health 70 :glucose 80 :hdl "35"}
+      {:date "4/2/01"  :BW 150 :health 70 :glucose 80 :hdl "46"}
+      {:date "5/2/01"  :BW 150 :health 70 :glucose 80 :hdl "34"}
+      {:date "6/2/01"  :BW 150 :health 70 :glucose 80 :hdl "45"}
+      {:date "7/2/01"  :BW 150 :health 70 :glucose 80 :hdl "51"}
+      {:date "8/2/01"  :BW 150 :health 70 :glucose 80 :hdl "51"}
+      {:date "9/2/01"  :BW 150 :health 70 :glucose 80 :hdl "53"}
+      {:date "10/2/01" :BW 150 :health 70 :glucose 80 :hdl "56"}
+      {:date "11/2/01" :BW 150 :health 70 :glucose 80 :hdl "51"}
+      {:date "12/2/01" :BW 150 :health 70 :glucose 80 :hdl "51"}
+      {:date "1/2/02"  :BW 150 :health 70 :glucose 80 :hdl "46"}
+      {:date "2/2/02"  :BW 150 :health 70 :glucose 80 :hdl "39"}
+      {:date "3/2/02"  :BW 150 :health 70 :glucose 80 :hdl "40"}
+      {:date "4/2/02"  :BW 150 :health 70 :glucose 80 :hdl "44"}
+      {:date "5/2/02"  :BW 150 :health 70 :glucose 80 :hdl "49"}
+      {:date "6/2/02"  :BW 150 :health 70 :glucose 80 :hdl "47"}
+      {:date "7/2/02"  :BW 150 :health 70 :glucose 80 :hdl "41"}
+      {:date "8/2/02"  :BW 150 :health 70 :glucose 80 :hdl "49"}
+      {:date "9/2/02"  :BW 150 :health 70 :glucose 80 :hdl "45"}
+      {:date "10/2/02" :BW 150 :health 70 :glucose 80 :hdl "39"}]}))
 
 (defn maps-to-csv [maps]
   (stringify-csv

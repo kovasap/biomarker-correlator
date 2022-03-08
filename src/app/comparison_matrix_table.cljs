@@ -2,6 +2,8 @@
   (:require
    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [app.stats :as stats]
+   [app.single-var-table :refer [aggregate-names]]
+   [clojure.set :refer [union]]
    [clojure.string :as st]))
 
 (defn get-biomarker-regression-result-keys
@@ -62,7 +64,7 @@
      :frozen
      ; TODO get all the :aggregates keys from the spec here instead of
      ; hardcoding
-     (if (contains? #{:input :score} k)
+     (if (contains? (union #{:input} aggregate-names) k)
        true
        false)}))
 

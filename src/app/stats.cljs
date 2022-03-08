@@ -103,7 +103,7 @@
         ;                  (kixi/regression-standard-error var1 var2)
         ;                  cleaned-data]
     ; (prn (first  cleaned-data))
-    ; (if (and (= var1 :folate) (= var2 :glucose))
+    ; (if (and (= var1 :na) (= var2 :hdl))
     ;   (do (prn cleaned-data) (prn correlation-result))
     ; {:linear-slope (round (if (nil? linear-result) nil
     ;                           (last (kixi-p/parameters linear-result)))]
@@ -134,10 +134,10 @@
          [:regression-results CorrelationResults]]])
 
 (defn compute-correlations
-  {:malli/schema [:=>
-                  [:cat [:sequential keyword?]
-                        [:sequential keyword?]
-                        proc/ProcessedRows]
+  {:malli/schema [:=> [:cat
+                       [:sequential keyword?]
+                       [:sequential keyword?]
+                       proc/ProcessedRows]
                   PairwiseCorrelations]}
   [inputs biomarkers data]
   ; [(s/coll-of keyword?) (s/coll-of keyword?)

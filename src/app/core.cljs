@@ -14,15 +14,12 @@
     [malli.core :as m]
     [malli.instrument.cljs :as mi]
     ; Uncomment when https://github.com/metosin/malli/pull/655 is in.
-    ; [malli.dev.cljs :as dev]
-    ; [malli.dev.pretty :as pretty]
+    [malli.dev.cljs :as dev]
+    [malli.dev.pretty :as pretty]
     [cljs.spec.alpha :as s]
     [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
     [reagent.core :as r]
     [reagent.dom :as d]))
-
-; Uncomment when https://github.com/metosin/malli/pull/655 is in.
-; (dev/start! {:report (pretty/reporter)})
 
 (s/def ::input keyword?)
 (s/def ::biomarker keyword?)
@@ -43,15 +40,6 @@
   (into (sorted-map-by <) (filter #(and (vector? %) (not (map? (last %))))
                                 (tree-seq associative? seq data))))
 
-(def CsvData
-  [:sequential [:map [:date string?]]])
-
-(defn get-datapoints
-  {:malli/schema [:=>
-                  [:cat CsvData]
-                  [:vector float?]]}
-  [data variable])
-
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name
                 input-data biomarker-data]} @csv/csv-data
@@ -61,10 +49,10 @@
         pairwise-correlations (stats/compute-correlations
                                 inputs biomarkers processed-data)
         input-correlations (single-var-table/make-all-correlations
-                             pairwise-correlations input-data
+                             pairwise-correlations processed-data
                              :input :biomarker)
         biomarker-correlations (single-var-table/make-all-correlations
-                                 pairwise-correlations biomarker-data
+                                 pairwise-correlations processed-data
                                  :biomarker :input)
         pairwise-correlations-for-table (map
                                          #(update-in % [:regression-results]
@@ -86,6 +74,11 @@
       [csv/upload-btn input-file-name csv/input-upload-reqs]]
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
       [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
+     [:br]
+     [:div "Input validation: " (proc/get-validation-string input-data)]
+     [:div "Biomarker validation: " (proc/get-validation-string biomarker-data)]
+     [:div "Cross data validation: " (proc/get-all-data-validation-string
+                                       input-data biomarker-data)]
      [:h3 "Per-Input Table"]
      [:p "Not statistically significant results are displayed with greyed-out
       text.  The score for each input is calculated as the number of
@@ -118,15 +111,18 @@
 ; TODO determine if there is a better place for this.
 ; (g/check)
 
-(mi/collect!)
-(mi/instrument!)
-; (dev/start!)
-
 ;; -------------------------
 ;; Initialize app
 
 (defn ^:dev/after-load mount-root []
   (d/render [home-page] (.getElementById js/document "app")))
+
+
+(defn ^:dev/after-load refresh []
+  (prn "Hot code Remount")
+  ; Check all malli function "specs"
+  (dev/start! {:report (pretty/reporter)})
+  (mount-root))
 
 (defn ^:export init! []
   (mount-root))
