@@ -30,6 +30,8 @@
 
 (defn get-vars
   "Gets all variables (csv columns) from parsed csv maps besides the date."
+  {:malli/schema [:=> [:cat proc/DatedRows]
+                  [:sequential keyword?]]}
   [data]
   (filter #(not= % :date) (keys (first data))))
 

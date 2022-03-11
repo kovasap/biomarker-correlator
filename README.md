@@ -1,7 +1,26 @@
 # Biomarker Correlator
 
+## Purpose
+
+The purpose of this tool is to (1) make it easier for individuals to find
+correlations between metrics about themselves, and (2) motivate individuals to
+do whatever manual work is necessary to keep up their personal tracking. The
+motivation piece could come from the pleasure of interacting with this tool
+and/or the habit-changing insights that it might produce for a given person.
+
+In the context of a user's greater quantified self efforts, this tool would
+consume data from a user's personal data storage system and present them with
+visualizations.  For me, this personal data storage system is sheets in my
+Google Drive, but for others it may be different. In this sense, this tool is
+similar to my other project https://github.com/kovasap/autojournal. See
+https://kovasap.github.io/docs/health-and-longevity/tracking-health/ for more
+context here.
+
 ## TODOs
 
+ - Add ability to pull data from sheets in a Google Drive automatically. For
+   instance, if a user is signed in to Google, then the website would
+   automatically be populated with their data on first load.
  - Migrate from ghostwheel to malli:
    https://github.com/metosin/malli/blob/master/docs/function-schemas.md
  - Use hazard ratios and progression of biomarkers over time to try to come up
