@@ -123,8 +123,15 @@
 (defn ^:dev/after-load refresh []
   (prn "Hot code Remount")
   ; Check all malli function "specs"
-  (dev/start! {:report (pretty/reporter)})
+  ; TODO use the dev namespace once the PR referenced in
+  ; https://github.com/metosin/malli/issues/654#issuecomment-1065650984 is
+  ; merged.
+  ; (dev/start! {:report (pretty/reporter)})
+  (malli.dev.cljs/collect-all!)
+  (malli.instrument.cljs/instrument!)
   (mount-root))
 
 (defn ^:export init! []
+  (malli.dev.cljs/collect-all!)
+  (malli.instrument.cljs/instrument!)
   (mount-root))
