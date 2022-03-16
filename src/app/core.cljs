@@ -2,6 +2,7 @@
   ; #:ghostwheel.core {:check     true
   ;                    :num-tests 10
   (:require
+    [app.google-drive :as gd]
     [app.csv :as csv]
     [app.stats :as stats]
     ; Load namespace for malli checking.
@@ -42,6 +43,7 @@
   (into (sorted-map-by <) (filter #(and (vector? %) (not (map? (last %))))
                                 (tree-seq associative? seq data))))
 
+ 
 (defn home-page []
   (let [{:keys [input-file-name biomarker-file-name
                 input-data biomarker-data]} @csv/csv-data
@@ -63,6 +65,7 @@
                                          pairwise-correlations)
         flat-results (map flatten-map pairwise-correlations-for-table)
         flat-results-atom (r/atom flat-results)]
+    (gd/list-files)
     [:div.app.content
      [:h1.title "Biomarker Correlator"]
      [:p "This application calculates cross correlations between inputs and
@@ -75,7 +78,6 @@
      ; Google drive integration controlled by public/js/gdrive.js.
      [:button {:id "authorize_button" :style {:display "none"}} "Authorize"]
      [:button {:id "signout_button" :style {:display "none"}} "Sign Out"]
-     [:pre {:id "content" :style {:white-space "pre-wrap"}}]
 
      [:div.topbar.hidden-print "\"Upload\" input data"
       [csv/upload-btn input-file-name csv/input-upload-reqs]]

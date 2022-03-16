@@ -1,3 +1,5 @@
+// Taken from https://developers.google.com/drive/api/v3/quickstart/js
+
 // Client ID and API key from the Developer Console
 // https://console.cloud.google.com/apis/credentials?project=biomarker-correlator
 var CLIENT_ID = '1071930237240-elt3e48qnnn155muu6iiqmtecius43ep.apps.googleusercontent.com';
@@ -78,29 +80,29 @@ function handleSignoutClick(event) {
  *
  * @param {string} message Text to be placed in pre element.
  */
-function appendPre(message) {
-  var pre = document.getElementById('content');
-  var textContent = document.createTextNode(message + '\n');
-  pre.appendChild(textContent);
-}
+// function appendPre(message) {
+//   var pre = document.getElementById('content');
+//   var textContent = document.createTextNode(message + '\n');
+//   pre.appendChild(textContent);
+// }
 
 /**
  * Print files.
  */
-function listFiles() {
-  gapi.client.drive.files.list({
-    'pageSize': 10,
-    'fields': "nextPageToken, files(id, name)"
-  }).then(function(response) {
-    appendPre('Files:');
-    var files = response.result.files;
-    if (files && files.length > 0) {
-      for (var i = 0; i < files.length; i++) {
-        var file = files[i];
-        appendPre(file.name + ' (' + file.id + ')');
-      }
-    } else {
-      appendPre('No files found.');
-    }
-  });
-}
+// function listFiles() {
+//   gapi.client.drive.files.list({
+//     'pageSize': 10,
+//     'fields': "nextPageToken, files(id, name)"
+//   }).then(function(response) {
+//     appendPre('Files:');
+//     var files = response.result.files;
+//     if (files && files.length > 0) {
+//       for (var i = 0; i < files.length; i++) {
+//         var file = files[i];
+//         appendPre(file.name + ' (' + file.id + ')');
+//       }
+//     } else {
+//       appendPre('No files found.');
+//     }
+//   });
+// }
