@@ -36,11 +36,11 @@
   (s/map-of keyword? ::one-to-many-correlation))
 
 (def OneToManyCorrelation
-  [:map [:one-var keyword?]
-        [:aggregates [:map [:score int?]
-                           [:average float?]
-                           [:acm-score float?]]]
-        [:correlations [:map [:many-var keyword?]
+  [:map [:one-var :keyword]
+        [:aggregates [:map [:score :int]
+                           [:average :number]
+                           [:acm-score :number]]]
+        [:correlations [:map [:many-var :keyword]
                              [:regression-results stats/CorrelationResults]]]])
 
 ; TODO generate these from the OneToManyCorrelation spec above
@@ -74,7 +74,7 @@
                        :keyword
                        :keyword
                        :keyword
-                       [:vector float?]]
+                       [:vector :number]]
                   OneToManyCorrelation]}
   [data one-var-type one-var many-var-type one-var-raw-data]
   ; [::pairwise-correlations keyword? keyword? keyword?

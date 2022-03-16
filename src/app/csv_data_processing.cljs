@@ -17,11 +17,11 @@
 (s/def ::processed-rows (s/coll-of ::processed-row))
 
 (def DatedRows
-  [:sequential [:map [:date time/date]]])
+  [:sequential [:map [:date time/Date]]])
 
 (def ProcessedRows
-  [:sequential [:map [:date time/date]
-                     [:timestamp time/timestamp]]])
+  [:sequential [:map [:date time/Date]
+                     [:timestamp time/Timestamp]]])
 
 ; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec

@@ -12,7 +12,7 @@
                                 (s/keys :req-un [:app.time/timestamp]))))
 ; TODO fix when https://github.com/metosin/malli/issues/652 is resolved
 (def TimeseriesData
-  [:sequential [:map [:timestamp time/timestamp]]])
+  [:sequential [:map [:timestamp time/Timestamp]]])
 
 (s/def ::hr float?)
 (s/def ::hr-timeseries-data (s/coll-of
@@ -20,8 +20,8 @@
                                    (s/keys :req-un [::hr
                                                     :app.time/timestamp]))))
 (def HRTimeseriesData
-  [:sequential [:map [:timestamp time/timestamp]
-                     [:hr float?]]])
+  [:sequential [:map [:timestamp time/Timestamp]
+                     [:hr :number]]])
 
 (s/def ::value float?)
 (s/def ::hr-low float?)

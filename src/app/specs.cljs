@@ -11,7 +11,7 @@
                                       :number number?))))
 
 (s/def ::hiccup vector?)
-(def Hiccup vector?)
+(def Hiccup [:vector :any])
 
 (defn make-hiccup
   {:malli/schema [:=> [:cat :string] Hiccup]}

@@ -31,7 +31,7 @@
 (defn get-vars
   "Gets all variables (csv columns) from parsed csv maps besides the date."
   {:malli/schema [:=> [:cat proc/DatedRows]
-                  [:sequential keyword?]]}
+                  [:sequential :keyword]]}
   [data]
   (filter #(not= % :date) (keys (first data))))
 
@@ -72,6 +72,11 @@
       behind this app that data is sent to for analysis; everything is done
       client side in the browser. Therefore, the page can be saved and run
       offline as needed."]
+     ; Google drive integration controlled by public/js/gdrive.js.
+     [:button {:id "authorize_button" :style {:display "none"}} "Authorize"]
+     [:button {:id "signout_button" :style {:display "none"}} "Sign Out"]
+     [:pre {:id "content" :style {:white-space "pre-wrap"}}]
+
      [:div.topbar.hidden-print "\"Upload\" input data"
       [csv/upload-btn input-file-name csv/input-upload-reqs]]
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
@@ -127,11 +132,11 @@
   ; https://github.com/metosin/malli/issues/654#issuecomment-1065650984 is
   ; merged.
   ; (dev/start! {:report (pretty/reporter)})
-  (malli.dev.cljs/collect-all!)
-  (malli.instrument.cljs/instrument!)
+  ; (malli.dev.cljs/collect-all!)
+  ; (malli.instrument.cljs/instrument!)
   (mount-root))
 
 (defn ^:export init! []
-  (malli.dev.cljs/collect-all!)
-  (malli.instrument.cljs/instrument!)
+  ; (malli.dev.cljs/collect-all!)
+  ; (malli.instrument.cljs/instrument!)
   (mount-root))

@@ -7,7 +7,8 @@
         reagent/reagent {:mvn/version "1.1.0"}
         cljfmt/cljfmt {:mvn/version "0.8.0"}
         metosin/spec-tools {:mvn/version "0.10.5"}
-        metosin/malli {:mvn/version "0.8.4"}
+        metosin/malli {:git/url "https://github.com/metosin/malli.git"
+                       :git/sha "303c6062f02a2beed62e432c1a1a1046cfa1e288"}
         gnl/ghostwheel {:mvn/version "0.3.9"}
         gnl/ghostwheel.tracer {:mvn/version "0.3.9"}
         kixi/stats {:mvn/version "0.5.4"}

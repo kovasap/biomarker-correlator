@@ -83,10 +83,10 @@
 
 (def CorrelationResults
   [:map [:scatterplot specs/Hiccup]
-        [:correlation float?]
-        [:p-value float?]
-        [:raw-data [:sequential [:map [:timestamp time/timestamp]]]]
-        [:datapoints int?]])
+        [:correlation :number]
+        [:p-value :number]
+        [:raw-data [:sequential [:map [:timestamp time/Timestamp]]]]
+        [:datapoints :int]])
 
 (defn calc-correlation
   [var1 var2 data]
@@ -129,14 +129,14 @@
 
 (def PairwiseCorrelations
   [:sequential
-   [:map [:input keyword?]
-         [:biomarker keyword?]
+   [:map [:input :keyword]
+         [:biomarker :keyword]
          [:regression-results CorrelationResults]]])
 
 (defn compute-correlations
   {:malli/schema [:=> [:cat
-                       [:sequential keyword?]
-                       [:sequential keyword?]
+                       [:sequential :keyword]
+                       [:sequential :keyword]
                        proc/ProcessedRows]
                   PairwiseCorrelations]}
   [inputs biomarkers data]

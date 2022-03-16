@@ -26,10 +26,10 @@
   (to-long (date-time year month date)))
 
 (s/def ::date string?)
-(def date :string)
+(def Date :string)
 
 (s/def ::timestamp (s/and int? pos?))
-(def timestamp [:and :int [:>= 0]])
+(def Timestamp [:and :int [:>= 0]])
 
 
 ; Outputs dates in format https://vega.github.io/vega-lite/docs/datetime.html
