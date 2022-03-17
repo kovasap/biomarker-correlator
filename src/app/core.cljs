@@ -65,7 +65,6 @@
                                          pairwise-correlations)
         flat-results (map flatten-map pairwise-correlations-for-table)
         flat-results-atom (r/atom flat-results)]
-    (gd/list-files)
     [:div.app.content
      [:h1.title "Biomarker Correlator"]
      [:p "This application calculates cross correlations between inputs and
@@ -78,6 +77,9 @@
      ; Google drive integration controlled by public/js/gdrive.js.
      [:button {:id "authorize_button" :style {:display "none"}} "Authorize"]
      [:button {:id "signout_button" :style {:display "none"}} "Sign Out"]
+     [:button {:on-click #(gd/populate-data!)}
+              "Fetch Google Drive Data"]
+     [:pre (str @gd/data)]
 
      [:div.topbar.hidden-print "\"Upload\" input data"
       [csv/upload-btn input-file-name csv/input-upload-reqs]]
