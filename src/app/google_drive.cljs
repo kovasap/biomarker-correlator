@@ -1,6 +1,7 @@
 ; Depends on code in public/js/gdrive.js to setup the js/gapi.
 (ns app.google-drive
   (:require
+    [app.csv :as csv]
     [reagent.core :as r]
     [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
     [cljs.core.async :refer-macros [go go-loop alt!]]))
@@ -58,7 +59,10 @@
 (defn get-file-data
   [file-id]
   (put! get-file-ids file-id)
-  (take! file-datas #(prn %)))
+  (take! file-datas
+         (fn [response]
+           (swap! data assoc :data (csv/my-parse-csv (:body response)))
+           (prn @data))))
 
 (defn get-folder-file-data
   "Gets data for all files in the folder with the given id."

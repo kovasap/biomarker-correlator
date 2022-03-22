@@ -108,7 +108,6 @@
            file))))
 
 (defn my-parse-csv [csv-data]
-  ; [{}])
   (js->clj
    (parse-csv csv-data (clj->js {:columns true
                                  :skip_empty_lines true
