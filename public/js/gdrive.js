@@ -10,7 +10,18 @@ var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/res
 
 // Authorization scopes required by the API; multiple scopes can be
 // included, separated by spaces.
-var SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
+// See possibilities at
+// https://developers.google.com/identity/protocols/oauth2/scopes#drive.
+var SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+
+function require(url, callback) {
+  var e = document.createElement("script");
+  e.src = url;
+  e.type="text/javascript";
+  e.addEventListener('load', callback);
+  document.getElementsByTagName("head")[0].appendChild(e);
+}
 
 /**
  *  On load, called to load the auth2 library and API client library.
@@ -30,15 +41,21 @@ function initClient() {
     discoveryDocs: DISCOVERY_DOCS,
     scope: SCOPES
   }).then(function () {
+    require("/js/libs.js/main.js");
+    require("/js/app.js", function() {
+      // Load the app
+      app.core.init_BANG_();
+
+      // Handle the initial sign-in state.
+      updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+      document.getElementById('authorize_button').onclick = handleAuthClick;
+      document.getElementById('signout_button').onclick = handleSignoutClick;
+    });
+
     // Listen for sign-in state changes.
     gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-
-    // Handle the initial sign-in state.
-    updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-    document.getElementById('authorize_button').onclick = handleAuthClick;
-    document.getElementById('signout_button').onclick = handleSignoutClick;
   }, function(error) {
-    appendPre(JSON.stringify(error, null, 2));
+    console.log(error);
   });
 }
 
@@ -70,36 +87,3 @@ function handleAuthClick(event) {
 function handleSignoutClick(event) {
   gapi.auth2.getAuthInstance().signOut();
 }
-
-/**
- * Append a pre element to the body containing the given message
- * as its text node. Used to display the results of the API call.
- *
- * @param {string} message Text to be placed in pre element.
- */
-// function appendPre(message) {
-//   var pre = document.getElementById('content');
-//   var textContent = document.createTextNode(message + '\n');
-//   pre.appendChild(textContent);
-// }
-
-/**
- * Print files.
- */
-// function listFiles() {
-//   gapi.client.drive.files.list({
-//     'pageSize': 10,
-//     'fields': "nextPageToken, files(id, name)"
-//   }).then(function(response) {
-//     appendPre('Files:');
-//     var files = response.result.files;
-//     if (files && files.length > 0) {
-//       for (var i = 0; i < files.length; i++) {
-//         var file = files[i];
-//         appendPre(file.name + ' (' + file.id + ')');
-//       }
-//     } else {
-//       appendPre('No files found.');
-//     }
-//   });
-// }

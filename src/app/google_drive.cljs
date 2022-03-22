@@ -6,7 +6,7 @@
     [cljs.core.async :refer-macros [go go-loop alt!]]))
 
 ; Defined in publi/js/gdrive.js
-(js/handleClientLoad)
+; (js/handleClientLoad)
 
 (def data
   (r/atom {}))
@@ -23,7 +23,7 @@
 (def list-files-requests (chan))
 (def listed-files (chan))
 
-; Calls the list-files Google Drive API and puts the results into listed-files.
+; Calls the files.list Google Drive API and puts the results into listed-files.
 (go-loop []
   (. (.. js/gapi -client -drive -files
        (list
@@ -42,7 +42,25 @@
     (assert (= 1 (count files)))
     (:id (first files))))
 
+(def get-file-ids (chan))
+(def file-datas (chan))
+
+; Calls the files.get Google Drive API and puts the results into file-datas.
+(go-loop []
+  (. (.. js/gapi -client -drive -files
+       (get (clj->js {:fileId (<! get-file-ids)
+                      :alt "media"})))
+     (then (fn [response]
+             (prn response)
+             (put! file-datas (js->clj response :keywordize-keys true)))))
+  (recur))
+
 (defn get-file-data
+  [file-id]
+  (put! get-file-ids file-id)
+  (take! file-datas #(prn %)))
+
+(defn get-folder-file-data
   "Gets data for all files in the folder with the given id."
   [folder-id]
   (put! list-files-requests {:q (str "'" folder-id "' in parents")})
@@ -56,6 +74,7 @@
                ; export_media like
                ; https://github.com/kovasap/autojournal/blob/8a4aa2b03deef040fc6b04c2e4a902265e71076c/autojournal/drive_api.py#L60
                ; and get the file data.
+               (get-file-data (:id file))
                (swap! data assoc (:name file) (:id file)))))))
 
 (defn populate-data!
@@ -64,4 +83,4 @@
   []
   (put! list-files-requests {:q "mimeType='application/vnd.google-apps.folder'
                                and name='biomarker-correlator'"})
-  (take! listed-files #(get-file-data (get-single-file-id %))))
+  (take! listed-files #(get-folder-file-data (get-single-file-id %))))
