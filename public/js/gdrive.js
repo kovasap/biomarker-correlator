@@ -12,9 +12,6 @@ var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/res
 // included, separated by spaces.
 var SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
 
-var authorizeButton = document.getElementById('authorize_button');
-var signoutButton = document.getElementById('signout_button');
-
 /**
  *  On load, called to load the auth2 library and API client library.
  */
@@ -38,8 +35,8 @@ function initClient() {
 
     // Handle the initial sign-in state.
     updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-    authorizeButton.onclick = handleAuthClick;
-    signoutButton.onclick = handleSignoutClick;
+    document.getElementById('authorize_button').onclick = handleAuthClick;
+    document.getElementById('signout_button').onclick = handleSignoutClick;
   }, function(error) {
     appendPre(JSON.stringify(error, null, 2));
   });
@@ -51,12 +48,12 @@ function initClient() {
  */
 function updateSigninStatus(isSignedIn) {
   if (isSignedIn) {
-    authorizeButton.style.display = 'none';
-    signoutButton.style.display = 'block';
+    document.getElementById('authorize_button').style.display = 'none';
+    document.getElementById('signout_button').style.display = 'block';
     // listFiles();
   } else {
-    authorizeButton.style.display = 'block';
-    signoutButton.style.display = 'none';
+    document.getElementById('authorize_button').style.display = 'block';
+    document.getElementById('signout_button').style.display = 'none';
   }
 }
 
