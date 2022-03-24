@@ -48,6 +48,16 @@
   (filter (fn [datum] (every? #(not (js/isNaN (% datum))) ks))
           data))
 
+(defn make-into-floats
+  {:malli/schema [:=> [:cat
+                       [:map-of [:keyword :string]]]
+                  [:map-of [:keyword :number]]]}
+  [data]
+  (into {} (for [[k v] data]
+             [k (if (= k :timestamp)
+                  v
+                  (js/parseFloat v))])))
+
 (defn round [n]
   (/ (Math/round (* 1000 (+ n (. js/Number -EPSILON)))) 1000))
 
@@ -93,7 +103,9 @@
   ; [keyword? keyword? :app.specs/maps
   ;  => ::regression-results]
   (let [cleaned-data (map #(select-keys % [:timestamp var1 var2])
-                          (filter-missing data var1 var2))
+                          (filter-missing
+                            (map make-into-floats data)
+                            var1 var2))
         ; linear-result (transduce identity
         ;                          (kixi/simple-linear-regression var1 var2)
         ;                          cleaned-data))
@@ -102,6 +114,7 @@
         ; error (transduce identity
         ;                  (kixi/regression-standard-error var1 var2)
         ;                  cleaned-data]
+    (prn cleaned-data)
     ; (prn (first  cleaned-data))
     ; (if (and (= var1 :na) (= var2 :hdl))
     ;   (do (prn cleaned-data) (prn correlation-result))

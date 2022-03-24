@@ -4,13 +4,14 @@
     [app.csv :as csv]
     [reagent.core :as r]
     [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
-    [cljs.core.async :refer-macros [go go-loop alt!]]))
+    [cljs.core.async :refer-macros [go go-loop alt!]]
+    [clojure.string :as st]))
 
 ; Defined in publi/js/gdrive.js
 ; (js/handleClientLoad)
 
-(def data
-  (r/atom {}))
+(def found-files
+  (r/atom []))
 
 (def get-biomarker-correlator-folder-request
   {:pageSize 100
@@ -52,17 +53,27 @@
        (get (clj->js {:fileId (<! get-file-ids)
                       :alt "media"})))
      (then (fn [response]
-             (prn response)
              (put! file-datas (js->clj response :keywordize-keys true)))))
   (recur))
 
 (defn get-file-data
-  [file-id]
+  [file-id data-key]
   (put! get-file-ids file-id)
   (take! file-datas
          (fn [response]
-           (swap! data assoc :data (csv/my-parse-csv (:body response)))
-           (prn @data))))
+           (swap! csv/csv-data assoc
+                  data-key (csv/my-parse-csv (:body response))))))
+
+(defn get-data-key
+  "Returns the key under which to add the data to the csv-data atom. Returns
+  nil if the file in question should not be parsed (it is not a csv file, or
+  otherwise isn't parsable)"
+  [file-name]
+  (cond
+    (not (st/ends-with? file-name ".csv")) nil
+    (st/includes? file-name "biomarker") :biomarker-data
+    (st/includes? file-name "input") :input-data
+    :else nil))
 
 (defn get-folder-file-data
   "Gets data for all files in the folder with the given id."
@@ -74,12 +85,12 @@
              ; doseq is the right choice here, but i have absolutely no idea why
              ; `map` and `for` don't seem to work.
              (doseq [file files]
-               ; TODO instead of making the id the value here, instead call
-               ; export_media like
-               ; https://github.com/kovasap/autojournal/blob/8a4aa2b03deef040fc6b04c2e4a902265e71076c/autojournal/drive_api.py#L60
-               ; and get the file data.
-               (get-file-data (:id file))
-               (swap! data assoc (:name file) (:id file)))))))
+               (let [data-key (get-data-key (:name file))]
+                 (if data-key
+                   (do
+                     (get-file-data (:id file) data-key)
+                     (swap! found-files conj (:name file)))
+                   ())))))))
 
 (defn populate-data!
   "Populates the data atom with a map from filenames to csv data for all

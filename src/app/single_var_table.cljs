@@ -82,6 +82,7 @@
   ;  => ::one-to-many-correlation]
   (let [one-var-significant-correlations
         (one-var (group-by one-var-type (filter-insignificant data)))]
+    (prn one-var one-var-raw-data)
     {:one-var one-var
      :aggregates {:score (calc-counted-score one-var-significant-correlations)
                   ; :acm-score 0
@@ -90,6 +91,18 @@
      :correlations (for [correlation one-var-significant-correlations]
                      {:many-var (many-var-type correlation)
                       :regression-results (:regression-results correlation)})}))
+
+(defn get-csv-values
+  "Filters NaNs while getting the data."
+  {:malli/schema [:=> [:cat
+                       [:vector [:map [:keyword :number]]]
+                       :keyword]
+                  [:vector :number]]}
+  [csv-data column-name]
+  (into [] (for [row csv-data
+                 :let [value (column-name row)]
+                 :when (not (js/isNaN value))]
+             value)))
 
 (defn make-all-correlations
   {:malli/schema [:=> [:cat
@@ -105,7 +118,7 @@
     (into {} (for [one-var unique-one-vars]
                [one-var (get-significant-correlations
                           correlations one-var-type one-var many-var-type
-                          (mapv #(one-var %) csv-data))]))))
+                          (get-csv-values csv-data one-var))]))))
 
 (def table-keys [:correlation :p-value :datapoints])
 

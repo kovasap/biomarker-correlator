@@ -87,3 +87,48 @@
                {:hdl "49" :na "2114.7"}
                {:hdl "45" :na "1966.3"}
                {:hdl "39" :na "1831.9"}])))))
+
+; See https://github.com/kovasap/biomarker-correlator/issues/2
+(deftest csp-b1-correlation
+  (is (subset?
+        (set {:correlation 0.132 
+              :p-value 0.578
+              :datapoints 20})
+        (set (stats/calc-correlation
+               :crp :b1
+              [{:crp ""     :b1 "2"}
+               {:crp ""     :b1 "2.5"}
+               {:crp ""     :b1 "2.4"}
+               {:crp ""     :b1 "2.4"}
+               {:crp ""     :b1 "2.3"}
+               {:crp ""     :b1 "2.2"}
+               {:crp ""     :b1 "2.3"}
+               {:crp ""     :b1 "2.3"}
+               {:crp ""     :b1 "2.4"}
+               {:crp ""     :b1 "2.4"}
+               {:crp ""     :b1 "2.5"}
+               {:crp ""     :b1 "2.2"}
+               {:crp ""     :b1 "2.4"}
+               {:crp "0.67" :b1 "2.3"}
+               {:crp ""     :b1 "2.3"}
+               {:crp ""     :b1 "2.1"}
+               {:crp "0.41" :b1 "2.3"}
+               {:crp ""     :b1 "2.1"}
+               {:crp "0.34" :b1 "1.7"}
+               {:crp "0.47" :b1 "1.8"}
+               {:crp "0.29" :b1 "1.9"}
+               {:crp "0.2"  :b1 "2"}
+               {:crp "0.3"  :b1 "1.9"}
+               {:crp "0.37" :b1 "2.3"}
+               {:crp "0.53" :b1 "2.3"}
+               {:crp "1.01" :b1 "2.1"}
+               {:crp "0.84" :b1 "2.3"}
+               {:crp "0.46" :b1 "2"}
+               {:crp "0.27" :b1 "2.1"}
+               {:crp "1.01" :b1 "2"}
+               {:crp "0.66" :b1 "1.9"}
+               {:crp "0.57" :b1 "1.6"}
+               {:crp "0.69" :b1 "1.7"}
+               {:crp "0.36" :b1 "1.9"}
+               {:crp "0.3"  :b1 "2"}
+               {:crp "0.3"  :b1 "2"}])))))

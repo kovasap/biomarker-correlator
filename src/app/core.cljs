@@ -75,12 +75,23 @@
       client side in the browser. Therefore, the page can be saved and run
       offline as needed."]
      ; Google drive integration controlled by public/js/gdrive.js.
+     [:h3 "Data Ingestion"]
+     [:h4 "Google Drive Integration"]
+     [:p "Once signed in and authorized, this application will search through
+      your Google Drive, find a folder named \"biomarker-correlator\", and then
+      process the files within that folder. Any CSV files with \"inputs\" in
+      the name will be treated as the input data files and any with \"biomarkers\"
+      in the name will be treated as the biomarker data files."]
+     [:p "If you are getting permissions issues, note that you need to be
+      whitelisted as this app is currently not verified with Google. Please
+      contact kovas.palunas@gmail.com if you want to be whitelisted."]
      [:button {:id "authorize_button" :style {:display "none"}} "Authorize"]
      [:button {:id "signout_button" :style {:display "none"}} "Sign Out"]
      [:button {:on-click #(gd/populate-data!)}
               "Fetch Google Drive Data"]
-     [:pre (str @gd/data)]
+     [:pre "Found files " (str @gd/found-files)]
 
+     [:h4 "CSV"]
      [:div.topbar.hidden-print "\"Upload\" input data"
       [csv/upload-btn input-file-name csv/input-upload-reqs]]
      [:div.topbar.hidden-print "\"Upload\" biomarker data"
