@@ -3,6 +3,7 @@
 npx webpack --entry ./target/index.js --output-path public/js/libs.js
 clj -A:shadow-cljs release app
 
+rm -r release
 mkdir release
 cp -r public/* release/
 mkdir -p release/biomarker-correlator

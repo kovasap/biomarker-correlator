@@ -82,7 +82,6 @@
   ;  => ::one-to-many-correlation]
   (let [one-var-significant-correlations
         (one-var (group-by one-var-type (filter-insignificant data)))]
-    (prn one-var one-var-raw-data)
     {:one-var one-var
      :aggregates {:score (calc-counted-score one-var-significant-correlations)
                   ; :acm-score 0
