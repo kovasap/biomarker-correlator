@@ -114,7 +114,6 @@
         ; error (transduce identity
         ;                  (kixi/regression-standard-error var1 var2)
         ;                  cleaned-data]
-    (prn cleaned-data)
     ; (prn (first  cleaned-data))
     ; (if (and (= var1 :na) (= var2 :hdl))
     ;   (do (prn cleaned-data) (prn correlation-result))
