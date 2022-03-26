@@ -119,7 +119,7 @@
                           correlations one-var-type one-var many-var-type
                           (get-csv-values csv-data one-var))]))))
 
-(def table-keys [:correlation :p-value :datapoints])
+(def table-keys [:correlation :rounded-p-value :datapoints])
 
 (>defn get-one-var-timeseries-data
   [data]

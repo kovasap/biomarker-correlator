@@ -136,7 +136,9 @@
                                                :scheme "viridis"}}}}]
      :raw-data cleaned-data
      :correlation (round (:correlation correlation-result))
-     :p-value (round (:p-value correlation-result))
+     :p-value (:p-value correlation-result)
+     :rounded-p-value (let [rounded-pval (round (:p-value correlation-result))]
+                        (if (= 0 rounded-pval) "<0.001" (str rounded-pval)))
      :datapoints (count cleaned-data)}))
 
 (def PairwiseCorrelations
