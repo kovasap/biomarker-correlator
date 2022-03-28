@@ -18,11 +18,13 @@ context here.
 
 ## TODOs
 
- - Add ability to pull data from sheets in a Google Drive automatically. For
-   instance, if a user is signed in to Google, then the website would
-   automatically be populated with their data on first load.
- - Migrate from ghostwheel to malli:
-   https://github.com/metosin/malli/blob/master/docs/function-schemas.md
+ - Pull in data from momentodb spreadsheets
+ - Create aggregation system that can take timeseries data and turn it into
+   periods of time which can be used as individual data points for
+   correlations.
+    - It would be really cool if we could use time of day as part of this
+      correlation somehow. For example, running between 5-7pm is associated
+      with some biomarker, but running between 8-9am is not.
  - Use hazard ratios and progression of biomarkers over time to try to come up
    with a "years of life saved" if a certain biomarker is made optimal.
  - Add an embedded youtube video explaining overview of process.
@@ -38,7 +40,7 @@ context here.
 
  - Add more ACM datasets:
 
- ```
+   ```
 Hi Kovas, in the study below, I'd use the ACM plots for UK Biobank (Figure 4), but not the other study, as the Biobank study sample size is 23x larger. Uric acid, albumin, BUN, alkaline phosphatase are of relevance.
 
 https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0241558
@@ -46,7 +48,7 @@ https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0241558
 MCV: https://pubmed.ncbi.nlm.nih.gov/26630695/
 
 Hemoglobin: https://pubmed.ncbi.nlm.nih.gov/29378732/
- ```
+   ```
 
 ## Libraries to use:
 

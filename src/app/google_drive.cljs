@@ -27,6 +27,8 @@
 
 ; Calls the files.list Google Drive API and puts the results into listed-files.
 (go-loop []
+  ; https://lwhorton.github.io/2018/10/20/clojurescript-interop-with-javascript.html
+  ; Explains this syntax.
   (. (.. js/gapi -client -drive -files
        (list
          ; Update request with default parameters if they are not provided.

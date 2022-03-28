@@ -14,7 +14,6 @@
     [app.ui :as ui]
     [malli.core :as m]
     [malli.instrument.cljs :as mi]
-    ; Uncomment when https://github.com/metosin/malli/pull/655 is in.
     [malli.dev.cljs :as dev]
     [malli.dev.pretty :as pretty]
     [cljs.spec.alpha :as s]
