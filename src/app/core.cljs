@@ -136,7 +136,9 @@
 ;; Initialize app
 
 (defn ^:dev/after-load mount-root []
-  (d/render [home-page] (.getElementById js/document "app")))
+  (d/render [home-page] (.getElementById js/document "app"))
+  ; Defined in publi/js/gdrive.js
+  (js/handleClientLoad))
 
 
 (defn ^:dev/after-load refresh []

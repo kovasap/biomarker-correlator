@@ -7,8 +7,13 @@
     [cljs.core.async :refer-macros [go go-loop alt!]]
     [clojure.string :as st]))
 
-; Defined in publi/js/gdrive.js
-; (js/handleClientLoad)
+(defn ^js/gapi get-gapi
+  "Returns nil if getting the gapi failed for some reason and js/gapi is
+  undefined as a result."
+  []
+  (if (nil? (.. js/gapi -client))
+    nil
+    js/gapi))
 
 (def found-files
   (r/atom []))
@@ -29,14 +34,19 @@
 (go-loop []
   ; https://lwhorton.github.io/2018/10/20/clojurescript-interop-with-javascript.html
   ; Explains this syntax.
-  (. (.. js/gapi -client -drive -files
-       (list
-         ; Update request with default parameters if they are not provided.
-         (clj->js (merge {:pageSize 100
-                          :fields "nextPageToken, files(id, name)"}
-                         (<! list-files-requests)))))
-     (then (fn [response]
-             (put! listed-files (js->clj response :keywordize-keys true)))))
+  ; This let parks the process before it can enter an infinite loop if
+  ; (get-gapi) returns nil.
+  (let [request (<! list-files-requests)]
+    (if (get-gapi)
+      (. (.. (get-gapi) -client -drive -files
+           (list
+             ; Update request with default parameters if they are not provided.
+             (clj->js (merge {:pageSize 100
+                              :fields "nextPageToken, files(id, name)"}
+                             request))))
+         (then (fn [response]
+                 (put! listed-files (js->clj response :keywordize-keys true)))))
+      nil))
   (recur))
 
 (defn get-single-file-id
@@ -51,11 +61,16 @@
 
 ; Calls the files.get Google Drive API and puts the results into file-datas.
 (go-loop []
-  (. (.. js/gapi -client -drive -files
-       (get (clj->js {:fileId (<! get-file-ids)
-                      :alt "media"})))
-     (then (fn [response]
-             (put! file-datas (js->clj response :keywordize-keys true)))))
+  ; This let parks the process before it can enter an infinite loop if
+  ; (get-gapi) returns nil.
+  (let [file-id (<! get-file-ids)]
+    (if (get-gapi)
+      (. (.. (get-gapi) -client -drive -files
+           (get (clj->js {:fileId file-id
+                          :alt "media"})))
+         (then (fn [response]
+                 (put! file-datas (js->clj response :keywordize-keys true)))))
+      nil))
   (recur))
 
 (defn get-file-data
