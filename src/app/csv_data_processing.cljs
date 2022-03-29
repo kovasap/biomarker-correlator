@@ -75,14 +75,19 @@
        "Some inputs headers were duplicated: " (st/join ", " duplicate-headers)]
       [:div {:style {:color "green"}} "Data validated successfully"])))
 
+(defn dups [sequence]
+  (for [[element freq] (frequencies sequence)
+        :when (> freq 1)]
+   element))
+
 (defn get-validation-string
   {:malli/schema [:=> [:cat DatedRows]
                   specs/Hiccup]}
   [rows]
-  (let [all-dates (map :date rows)
-        unique-dates (set all-dates)]
-    (if (not (= (count all-dates) (count unique-dates)))
-      [:div {:style {:color "red"}} "Repeated dates found in input!"]
+  (let [duplicate-dates (dups (map :date rows))]
+    (if (> (count duplicate-dates) 0)
+      [:div {:style {:color "red"}}
+       "Repeated dates found in file " (str duplicate-dates) "!"]
       [:div {:style {:color "green"}} "Data validated successfully"])))
 
 (>defn process-csv-data

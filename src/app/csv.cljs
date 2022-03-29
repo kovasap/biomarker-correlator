@@ -112,11 +112,15 @@
            file))))
 
 (defn my-parse-csv [csv-data]
-  (js->clj
-   (parse-csv csv-data (clj->js {:columns true
-                                 :skip_empty_lines true
-                                 :trim true}))
-   :keywordize-keys true))
+  (let [parsed-data
+        (js->clj
+          (parse-csv csv-data (clj->js {:columns true
+                                        :skip_empty_lines true
+                                        :trim true}))
+          :keywordize-keys true)]
+    ; :skip_empty_lines doesn't always seem to work, so we do our own filtering
+    ; here, removing all rows for which all values are the empty string.
+    (filter (fn [row] (not= #{""} (set (vals row)))) parsed-data)))
 
 (def extract-result
   (map #(-> % .-target .-result my-parse-csv)))
