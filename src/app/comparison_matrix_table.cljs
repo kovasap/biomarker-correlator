@@ -28,6 +28,30 @@
   (merge flat-map (:aggregates
                     ((:input flat-map) input-significant-correlations))))
 
+(def column-element-ordering
+  "Column names should be sorted in the order signified by these substrings."
+  ["correlation" "p-value" "datapoints"])
+
+(defn get-column-element-order-idx
+  [string]
+  (first
+    (filter #(not (nil? %))
+      (map-indexed (fn [index element]
+                     (if (st/includes? string element) index nil))
+                   column-element-ordering))))
+
+(defn column-name-compare-key
+  [col-keyword]
+  (if (st/includes? (name col-keyword) "--")
+    (let [[col-name data-type] (st/split (name col-keyword) #"--")]
+      (str col-name (get-column-element-order-idx data-type)))
+    (name col-keyword)))
+
+(defn compare-column-names
+  [name1 name2]
+  (compare (column-name-compare-key name1)
+           (column-name-compare-key name2)))
+
 (>defn make-comparison-matrix-data
   [results input-significant-correlations]
   [:app.specs/pairwise-correlations :app.specs/one-to-many-correlations
@@ -41,7 +65,7 @@
                     (cond
                       (contains? #{:input :score} a) -1
                       (contains? #{:input :score} b) -1
-                      :else (compare a b))))
+                      :else (compare-column-names a b))))
                 %)
          per-input-results)))
 
