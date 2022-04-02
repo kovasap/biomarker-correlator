@@ -1,8 +1,7 @@
 (ns app.comparison-matrix-table
   (:require
-   [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
    [app.stats :as stats]
-   [app.single-var-table :refer [aggregate-names]]
+   [app.single-var-table :refer [aggregate-names OneToManyCorrelation]]
    [clojure.set :refer [union]]
    [clojure.string :as st]))
 
@@ -17,8 +16,11 @@
   Also adds blank columns like :b--blank that add spacing between each
   biomarker in the final visualizations.
   "
+  {:malli/schema [:=> [:cat
+                       [:=> [:cat :keyword] :boolean]
+                       [:map-of :keyword :any]]
+                  [:map-of :keyword :any]]}
   [filter-func m]
-  [:app.specs/pairwise-correlation => :app.specs/maps]
   (conj {:input (:input m)
          (-build--key m "blank") ""}
         (into {} (for [[k v] (:regression-results m)
@@ -31,10 +33,11 @@
                               regression-result-key-filter)
                      same-input-results)))
 
-(>defn add-aggregates
+(defn add-aggregates
+  {:malli/schema
+   [:=> [:cat [:map-of :keyword OneToManyCorrelation] [:map-of :keyword :any]]
+    [:map-of :keyword :any]]}
   [input-significant-correlations flat-map]
-  [:app.specs/one-to-many-correlations :app.specs/maps
-   => :app.specs/maps]
   (merge flat-map (:aggregates
                     ((:input flat-map) input-significant-correlations))))
 
@@ -74,11 +77,15 @@
   (compare (column-name-compare-key name1)
            (column-name-compare-key name2)))
 
-(>defn make-comparison-matrix-data
+(defn make-comparison-matrix-data
+  {:malli/schema
+   [:=> [:cat stats/PairwiseCorrelationsLite
+         [:map-of :keyword OneToManyCorrelation]
+         ; This is really an atom containing a boolean.
+         ; TODO encode this in malli.
+         :any]
+    [:sequential :map]]}
   [results input-significant-correlations p-values-rounded?]
-  [:app.specs/pairwise-correlations :app.specs/one-to-many-correlations
-   boolean?
-   => :app.specs/maps]
   (let [per-input-rows (vals (group-by :input results))
         p-value-filter #(if @p-values-rounded?
                           (not= % :p-value)

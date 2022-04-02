@@ -72,16 +72,10 @@ https://github.com/mechatroner/rainbow_csv!
  - https://github.com/reagent-project/reagent/blob/master/doc/CreatingReagentComponents.md
  - https://github.com/reagent-project/reagent/blob/master/doc/InteropWithReact.md#creating-reagent-components-from-react-components
 
-### Spec
+### Malli (schema checking)
 
- - https://github.com/metosin/spec-tools/blob/master/docs/02_data_specs.md
- - https://github.com/gnl/ghostwheel
- - Tutorial: https://www.youtube.com/watch?v=5OuOnJXLxVE
-
-To use print statements `(prn)` in a ghostwheel `>defn`, you need to add 
-`{::g/ignore-fx true}` right after the function docstring to avoid
-"side-effect" errors.
-
+ - https://github.com/metosin/malli
+ - https://github.com/metosin/malli/blob/master/docs/clojurescript-function-instrumentation.md
 
 ### Stats
 

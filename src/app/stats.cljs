@@ -4,10 +4,6 @@
     [app.csv-data-processing :as proc]
     [app.time :as time]
     [oz.core :as oz]
-    [malli.core :as m]
-    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
-    [spec-tools.data-spec :as ds]
-    [cljs.spec.alpha :as s]
     [kixi.stats.math :refer [sq sqrt]]
     [kixi.stats.core :as kixi]
     [kixi.stats.test :as kixi-t]
@@ -50,11 +46,11 @@
 
 (defn make-into-floats
   {:malli/schema [:=> [:cat
-                       [:map-of [:keyword :string]]]
-                  [:map-of [:keyword :number]]]}
+                       [:map-of :keyword :any]]
+                  [:map-of :keyword :double]]}
   [data]
   (into {} (for [[k v] data]
-             [k (if (= k :timestamp)
+             [k (if (#{:date :timestamp} k)
                   v
                   (js/parseFloat v))])))
 
@@ -82,20 +78,16 @@
     {:domain [(apply min var-data)
               (apply max var-data)]}))
 
-(def regression-results
-  (ds/spec ::regression-results
-    {:scatterplot :app.specs/hiccup
-     :correlation float?
-     :p-value float?
-     :raw-data :app.csv-data-processing/processed-rows
-     :datapoints int?}))
-(s/def ::regression-results regression-results)
-
 (def CorrelationResults
-  [:map [:scatterplot specs/Hiccup]
-        [:correlation :number]
-        [:p-value :number]
+  [:map [:scatterplot specs/ReagentComponent]
+        [:correlation :double]
+        [:p-value :double]
         [:raw-data [:sequential [:map [:timestamp time/Timestamp]]]]
+        [:datapoints :int]])
+
+(def CorrelationResultsLite
+  [:map [:correlation :double]
+        [:p-value :double]
         [:datapoints :int]])
 
 (defn calc-correlation
@@ -104,7 +96,7 @@
   ;  => ::regression-results]
   (let [cleaned-data (map #(select-keys % [:timestamp var1 var2])
                           (filter-missing
-                            (map make-into-floats data)
+                            data ; (map make-into-floats data)
                             var1 var2))
         ; linear-result (transduce identity
         ;                          (kixi/simple-linear-regression var1 var2)
@@ -147,16 +139,26 @@
          [:biomarker :keyword]
          [:regression-results CorrelationResults]]])
 
+(def PairwiseCorrelationsLite
+  [:sequential
+   [:map [:input :keyword]
+         [:biomarker :keyword]
+         [:regression-results CorrelationResultsLite]]])
+
+(defn enliten
+  {:malli/schema [:=> [:cat PairwiseCorrelations]
+                  PairwiseCorrelationsLite]}
+  [pairwise-correlations]
+  (map #(update-in % [:regression-results] dissoc :scatterplot :raw-data)
+       pairwise-correlations))
+
 (defn compute-correlations
   {:malli/schema [:=> [:cat
                        [:sequential :keyword]
                        [:sequential :keyword]
-                       proc/ProcessedRows]
+                       [:sequential proc/ProcessedRow]]
                   PairwiseCorrelations]}
   [inputs biomarkers data]
-  ; [(s/coll-of keyword?) (s/coll-of keyword?)
-  ;  :app.csv-data-processing/processed-rows
-  ;  => ::pairwise-correlations]
   (for [input inputs
         biomarker biomarkers]
     {:input input

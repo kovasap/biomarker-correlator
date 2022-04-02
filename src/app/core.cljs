@@ -1,36 +1,21 @@
 (ns app.core
-  ; #:ghostwheel.core {:check     true
-  ;                    :num-tests 10
   (:require
     [app.google-drive :as gd]
     [app.csv :as csv]
     [app.stats :as stats]
-    ; Load namespace for malli checking.
-    [app.biomarker-data]
-    [app.specs :as specs]
+    [app.specs]
     [app.csv-data-processing :as proc]
     [app.comparison-matrix-table :as comp-matrix-tbl]
     [app.single-var-table :as single-var-table]
     [app.ui :as ui]
-    [malli.core :as m]
-    [malli.instrument.cljs :as mi]
     [malli.dev.cljs :as dev]
     [malli.dev.pretty :as pretty]
-    [cljs.spec.alpha :as s]
-    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
     [reagent.core :as r]
     [reagent.dom :as d]))
 
-(s/def ::input keyword?)
-(s/def ::biomarker keyword?)
-(s/def ::pairwise-correlations 
-  (s/coll-of (s/keys :req-un [::input
-                              ::biomarker
-                              :app.stats/regression-results])))
-
 (defn get-vars
   "Gets all variables (csv columns) from parsed csv maps besides the date."
-  {:malli/schema [:=> [:cat proc/DatedRows]
+  {:malli/schema [:=> [:cat [:sequential proc/DatedRow]]
                   [:sequential :keyword]]}
   [data]
   (filter #(not= % :date) (keys (first data))))
@@ -57,11 +42,7 @@
         biomarker-correlations (single-var-table/make-all-correlations
                                  pairwise-correlations processed-data
                                  :biomarker :input)
-        pairwise-correlations-for-table (map
-                                         #(update-in % [:regression-results]
-                                                     dissoc :scatterplot
-                                                     :raw-data)
-                                         pairwise-correlations)
+        pairwise-correlations-for-table (stats/enliten pairwise-correlations)
         flat-results (map flatten-map pairwise-correlations-for-table)
         flat-results-atom (r/atom flat-results)
         p-values-rounded? (r/atom true)]
@@ -137,14 +118,11 @@
               (for [sig-correlations (vals biomarker-correlations)]
                 (single-var-table/make-hiccup sig-correlations)))]])))
 
-; Run ghostwheel generative tests
-; TODO determine if there is a better place for this.
-; (g/check)
 
 ;; -------------------------
 ;; Initialize app
 
-(defn ^:dev/after-load mount-root []
+(defn mount-root []
   (d/render [home-page] (.getElementById js/document "app"))
   ; Defined in publi/js/gdrive.js
   (js/handleClientLoad))
@@ -152,16 +130,9 @@
 
 (defn ^:dev/after-load refresh []
   (prn "Hot code Remount")
-  ; Check all malli function "specs"
-  ; TODO use the dev namespace once the PR referenced in
-  ; https://github.com/metosin/malli/issues/654#issuecomment-1065650984 is
-  ; merged.
-  ; (dev/start! {:report (pretty/reporter)})
-  ; (malli.dev.cljs/collect-all!)
-  ; (malli.instrument.cljs/instrument!)
+  (dev/start! {:report (pretty/reporter)})  ; Check all malli function schemas
   (mount-root))
 
 (defn ^:export init! []
-  ; (malli.dev.cljs/collect-all!)
-  ; (malli.instrument.cljs/instrument!)
+  (dev/start! {:report (pretty/reporter)})  ; Check all malli function schemas
   (mount-root))

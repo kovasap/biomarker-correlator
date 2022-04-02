@@ -2,26 +2,16 @@
   (:require
     [app.time :as time]
     [app.specs :as specs]
-    [cljs.spec.alpha :as s]
-    [malli.core :as m]
-    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
-    [clojure.set :refer [union]]
     [clojure.string :as st]))
 
-(s/def ::dated-row (s/keys :req-un [:app.time/date]))
-(s/def ::dated-rows (s/coll-of ::dated-row))
+(def DatedRow
+  [:map [:date time/Date]])
 
-; Also all values are floats (not strings)
-(s/def ::processed-row (s/keys :req-un [:app.time/date
-                                        :app.time/timestamp]))
-(s/def ::processed-rows (s/coll-of ::processed-row))
-
-(def DatedRows
-  [:sequential [:map [:date time/Date]]])
-
-(def ProcessedRows
-  [:sequential [:map [:date time/Date]
-                     [:timestamp time/Timestamp]]])
+; TODO add `:keyword :double` pairs when
+; https://github.com/metosin/malli/issues/682 is closed.
+(def ProcessedRow
+  [:map [:date time/Date]
+        [:timestamp time/Timestamp]])
 
 ; Returns map of dates to :dated-row maps.
 ;; TODO figure out how to express this in spec
@@ -30,27 +20,29 @@
   ; (assert (:date (first rows)))
   (into (sorted-map) (map (fn [row] [(:date row) row]) rows)))
 
-(>defn merge-rows-using-dates
+(defn merge-rows-using-dates
   "Merges N sequences of row maps (e.g. from different spreadsheets) using
   the :date field as the joining attribute."
+  {:malli/schema [:=> [:cat [:* [:sequential DatedRow]]]
+                  [:sequential DatedRow]]}
   [& sets-of-rows]
-  [(s/coll-of ::dated-rows)
-   => ::dated-rows]
   (vals (apply merge-with (fn [row1 row2] (merge row1 row2))
                (map get-rows-by-dates sets-of-rows))))
 
 
-(>defn add-timestamps
+(defn add-timestamps
+  {:malli/schema [:=> [:cat [:sequential DatedRow]]
+                  [:sequential DatedRow]]}
   [data]
-  [::dated-rows => ::dated-rows]
   (map #(assoc % :timestamp (time/map-to-timestamp
                               (time/parse-date-range
                                 (:date %))))
        data))
 
-(>defn floatify-data
+(defn floatify-data
+  {:malli/schema [:=> [:cat [:sequential DatedRow]]
+                  [:sequential DatedRow]]}
   [data]
-  [::dated-rows => ::dated-rows]
   (map #(into {} (map (fn [[k v]]
                         [k (if (= k :date)
                              v
@@ -62,7 +54,7 @@
 
 ; TODO add spec validation to this function
 (defn get-all-data-validation-string
-  {:malli/schema [:=> [:cat [:sequential DatedRows]]
+  {:malli/schema [:=> [:cat [:* [:sequential DatedRow]]]
                   specs/Hiccup]}
   [& sets-of-rows]
   (let [headers (remove #(= :date %)
@@ -81,7 +73,7 @@
    element))
 
 (defn get-validation-string
-  {:malli/schema [:=> [:cat DatedRows]
+  {:malli/schema [:=> [:cat [:sequential DatedRow]]
                   specs/Hiccup]}
   [rows]
   (let [duplicate-dates (dups (map :date rows))]
@@ -90,12 +82,13 @@
        "Repeated dates found in file " (str duplicate-dates) "!"]
       [:div {:style {:color "green"}} "Data validated successfully"])))
 
-(>defn process-csv-data
+(defn process-csv-data
+  {:malli/schema [:=> [:cat [:* [:sequential DatedRow]]]
+                  [:sequential ProcessedRow]]}
   [& sets-of-rows]
-  [(s/coll-of ::dated-rows)
-   => ::processed-rows]
   (-> (apply merge-rows-using-dates sets-of-rows)
     add-timestamps
     floatify-data))
 
-(process-csv-data [{:a "100" :b "20" :date "4/2/00 to 5/2/00"}])
+(process-csv-data [{:a "100" :b "20" :date "4/2/00 to 5/2/00"}]
+                  [{:a "100" :b "20" :date "4/2/10"}])

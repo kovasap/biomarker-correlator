@@ -1,13 +1,11 @@
 (ns app.ui
   (:require
-    [app.specs]
-    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
+    [app.specs :as specs]
     [reagent-table.core :as rt]
     [reagent.core :as r]
     ["react-data-grid" :default DataGrid]
     [app.csv :as csv]
-    [clojure.string :as st]
-    [cljs.spec.alpha :as s]))
+    [clojure.string :as st]))
 
 
 (def px-per-character 13)
@@ -34,8 +32,6 @@
 (defn maps-to-datagrid
   [maps & {:keys [custom-make-datagrid-column]
            :or {custom-make-datagrid-column (fn [_] {})}}]
-  ; Not sure how to use ghostwheel with keyed args
-  ; [:app.specs/maps => :app.specs/hiccup]
   (let [sorted-rows (r/atom maps)
         sort-columns (r/atom [{:columnKey "input" :direction "ASC"}])]
     [:div
@@ -91,15 +87,16 @@
                (if (= k :input) "AAAAA" (name k))))
            (seq m)))
 
-(>defn maps-to-html
+(defn maps-to-html
   "Converts collection of maps like
   [{:col1 val1 :col2 val2} {:col1 val3 :col2 val4}]
   to an HTML table.
   
   See https://stackoverflow.com/a/33458370 for ^{:key} map explanation.
   "
+  {:malli/schema [:=> [:cat [:sequential :map]]
+                  specs/Hiccup]}
   [maps]
-  [(s/coll-of map?) => :app.specs/hiccup]
   (let [sorted-pairs (map map-to-sorted-pairs maps)]
     [:table
      (into [:tbody

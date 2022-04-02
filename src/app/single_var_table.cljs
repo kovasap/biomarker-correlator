@@ -1,47 +1,19 @@
 (ns app.single-var-table
   (:require
     [app.stats :as stats]
+    [app.specs :as specs]
     [app.biomarker-data :as biodata]
     [app.csv-data-processing :as proc]
-    [app.ui :as ui]
-    ; [spec-tools.data-spec :as ds]
-    [ghostwheel.core :as g :refer [>defn >defn- >fdef => | <- ?]]
-    [cljs.spec.alpha :as s]))
-
-; (def one-to-many-correlation
-;   (ds/spec ::one-to-many-correlation
-;     {:one-var keyword?
-;      :aggregates {:score int?
-;                   :average float?}
-;      :correlations [{:many-var keyword?
-;                      :regression-results :app.stats/regression-results}]}))
-; (s/def ::one-to-many-correlation one-to-many-correlation)
-; (s/def ::one-to-many-correlations
-;   (s/map-of keyword? ::one-to-many-correlation))
-
-(s/def ::one-var keyword?)
-(s/def ::many-var keyword?)
-
-(s/def ::score int?)
-(s/def ::average float?)
-(s/def ::aggregates (s/keys :req-un [::score ::average]))
-
-(s/def ::correlations
-  (s/coll-of (s/keys :req-un [::many-var :app.stats/regression-results])))
-
-(s/def ::one-to-many-correlation
-  (s/keys :req-un
-          [::one-var ::aggregates ::correlations]))
-(s/def ::one-to-many-correlations
-  (s/map-of keyword? ::one-to-many-correlation))
+    [app.ui :as ui]))
 
 (def OneToManyCorrelation
   [:map [:one-var :keyword]
         [:aggregates [:map [:score :int]
-                           [:average :number]
-                           [:acm-score :number]]]
-        [:correlations [:map [:many-var :keyword]
-                             [:regression-results stats/CorrelationResults]]]])
+                           [:average :double]]]
+                           ; [:acm-score :double]]]
+        [:correlations [:sequential
+                        [:map [:many-var :keyword]
+                              [:regression-results stats/CorrelationResults]]]]])
 
 ; TODO generate these from the OneToManyCorrelation spec above
 (def aggregate-names #{:score :average :acm-score})
@@ -58,14 +30,16 @@
 ; TODO we may need to introduce a concept of "up is good" and "down is bad" so
 ; that this score instead takes the difference between "good" and "bad"
 ; correlations, not just positive and negative ones.
-(>defn calc-counted-score
+(defn calc-counted-score
   "Sums up all postive correlations and all negatives correlations, then takes
   the difference."
+  {:malli/schema [:=> [:cat [:or :nil stats/PairwiseCorrelations]]
+                  :int]}
   [correlations]
-  [::pairwise-correlations
-   => int?]
-  (reduce + (map #(if (neg? (:correlation (:regression-results %))) -1 1)
-                 correlations)))
+  (if (nil? correlations)
+    0
+    (reduce + (map #(if (neg? (:correlation (:regression-results %))) -1 1)
+                   correlations))))
 
 
 (defn get-significant-correlations
@@ -74,12 +48,9 @@
                        :keyword
                        :keyword
                        :keyword
-                       [:vector :number]]
+                       [:vector :double]]
                   OneToManyCorrelation]}
   [data one-var-type one-var many-var-type one-var-raw-data]
-  ; [::pairwise-correlations keyword? keyword? keyword?
-  ;  | #(every? (fn [d] (contains? d one-var-type))  data)
-  ;  => ::one-to-many-correlation]
   (let [one-var-significant-correlations
         (one-var (group-by one-var-type (filter-insignificant data)))]
     {:one-var one-var
@@ -94,9 +65,9 @@
 (defn get-csv-values
   "Filters NaNs while getting the data."
   {:malli/schema [:=> [:cat
-                       [:vector [:map [:keyword :number]]]
+                       [:sequential [:map-of :keyword :any]]
                        :keyword]
-                  [:vector :number]]}
+                  [:vector :double]]}
   [csv-data column-name]
   (into [] (for [row csv-data
                  :let [value (column-name row)]
@@ -106,10 +77,10 @@
 (defn make-all-correlations
   {:malli/schema [:=> [:cat
                        stats/PairwiseCorrelations
-                       proc/ProcessedRows
+                       [:sequential proc/ProcessedRow]
                        :keyword
                        :keyword]
-                  OneToManyCorrelation]}
+                  [:map-of :keyword OneToManyCorrelation]]}
   [correlations csv-data one-var-type many-var-type]
   ; [::pairwise-correlations keyword? keyword?
   ;  => ::one-to-many-correlations]
@@ -121,9 +92,9 @@
 
 (def table-keys [:correlation :rounded-p-value :datapoints])
 
-(>defn get-one-var-timeseries-data
+(defn get-one-var-timeseries-data
+  {:malli/schema [:=> [:cat OneToManyCorrelation] biodata/TimeseriesData]}
   [data]
-  [::one-to-many-correlation => :app.biomarker-data/timeseries-data]
   (map #(select-keys % [:timestamp (:one-var data)])
        (-> data
            :correlations
@@ -131,7 +102,7 @@
            :regression-results
            :raw-data)))
 
-(>defn make-hiccup
+(defn make-hiccup
   "Creates a table like this:
            Input
         Aggregate 1
@@ -140,8 +111,8 @@
   data      | 0 | 0 | 0
   ...
   "
+  {:malli/schema [:=> [:cat OneToManyCorrelation] specs/ReagentComponent]}
   [data]
-  [::one-to-many-correlation => :app.specs/hiccup]
   (let [one-var (:one-var data)]
     [:div
       [:table
