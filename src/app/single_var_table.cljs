@@ -71,7 +71,7 @@
   [csv-data column-name]
   (into [] (for [row csv-data
                  :let [value (column-name row)]
-                 :when (not (js/isNaN value))]
+                 :when (and (not (nil? value)) (not (js/isNaN value)))]
              value)))
 
 (defn make-all-correlations

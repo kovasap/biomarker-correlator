@@ -14,7 +14,7 @@
 
 (def HRTimeseriesData
   [:sequential [:map [:timestamp time/Timestamp]
-                     [:hr :double]]])
+                     [:hr [:or :nil :double]]]])
 
 (def HazardRatioData
   [:map [:value :double]
@@ -30,11 +30,13 @@
 (defn get-var-name
   {:malli/schema [:=> [:cat TimeseriesData] :keyword]}
   [personal-data]
-  (-> personal-data
-    first
-    (#(dissoc % :timestamp))
-    keys
-    first))
+  (if (empty? personal-data)
+    :no-data
+    (-> personal-data
+      first
+      (#(dissoc % :timestamp))
+      keys
+      first)))
 
 
 (defn add-hrs
@@ -42,17 +44,20 @@
   {:malli/schema [:=> [:cat TimeseriesData [:sequential HazardRatioData]]
                       HRTimeseriesData]}
   [personal-data acm-data]
-  (let [var-name (get-var-name personal-data)
-        hr-to-value (into {} (for [{:keys [value hr-low hr-hi]} acm-data]
-                               [value (+ hr-low (/ (- hr-hi hr-low) 2))]))]
-    (mapv #(assoc % :hr (get hr-to-value (var-name %)))
-          personal-data)))
+  (if (empty? personal-data)
+    []
+    (let [var-name (get-var-name personal-data)
+          hr-to-value (into {} (for [{:keys [value hr-low hr-hi]} acm-data]
+                                 [value (+ hr-low (/ (- hr-hi hr-low) 2))]))]
+      (mapv #(assoc % :hr (get hr-to-value (var-name %)))
+            personal-data))))
 
 
 (defn make-acm-plot
   ; TODO add a spec check here that ensures the key in the ::timeseries-data is
   ; the same as the key used to access the ::biomarker-data
-  {:malli/schema [:=> [:cat TimeseriesData BiomarkerData] specs/Hiccup]}
+  {:malli/schema [:=> [:cat TimeseriesData BiomarkerData]
+                  specs/ReagentComponent]}
   [personal-data bio-data]
   ; TODO add an if statement to switch between male and female data.
   (let [acm-data (:men bio-data)

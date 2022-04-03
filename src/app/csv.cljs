@@ -4,7 +4,8 @@
    ["csv-stringify/sync" :rename {stringify stringify-csv}]
    [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
    [cljs.core.async :refer-macros [go go-loop alt!]]
-   [reagent.core :as r]))
+   [reagent.core :as r]
+   [clojure.string :refer [lower-case]]))
 
 
 ;; --------- Export as CSV ------------------------------------------
@@ -123,14 +124,24 @@
   [parsed-data]
   (map (fn [row] (dissoc row (keyword ""))) parsed-data))
 
+(defn -standardize-keys
+  {:malli/schema [:=> [:cat [:sequential [:map-of :string :string]]]
+                  [:sequential [:map-of :keyword :string]]]}
+  [parsed-data]
+  (map (fn [row] (into {} (for [[k v] row]
+                            [(keyword (lower-case k)) v])))
+       parsed-data))
+
 (defn my-parse-csv [csv-data]
   (let [parsed-data
         (js->clj
           (parse-csv csv-data (clj->js {:columns true
                                         :skip_empty_lines true
-                                        :trim true}))
-          :keywordize-keys true)]
+                                        :trim true})))]
+          ; We do this ourselves in -standardize-keys
+          ; :keywordize-keys true)]
     (-> parsed-data
+      -standardize-keys
       -remove-empty-rows
       -remove-empty-cols)))
 
