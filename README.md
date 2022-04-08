@@ -19,12 +19,6 @@ context here.
 ## TODOs
 
  - Pull in data from momentodb spreadsheets
- - Create aggregation system that can take timeseries data and turn it into
-   periods of time which can be used as individual data points for
-   correlations.
-    - It would be really cool if we could use time of day as part of this
-      correlation somehow. For example, running between 5-7pm is associated
-      with some biomarker, but running between 8-9am is not.
  - Use hazard ratios and progression of biomarkers over time to try to come up
    with a "years of life saved" if a certain biomarker is made optimal.
  - Add an embedded youtube video explaining overview of process.
@@ -49,6 +43,48 @@ MCV: https://pubmed.ncbi.nlm.nih.gov/26630695/
 
 Hemoglobin: https://pubmed.ncbi.nlm.nih.gov/29378732/
    ```
+
+## To Implement: Time Based Customizable Aggregation
+
+Currently, the tool requires you to feed aggregated data (e.g. total or daily
+average over 2 months). If you instead could feed it raw data (e.g. every data
+point is associated with an exact timestamp, like "ate 1 orange at 1/1/21
+1:00PM"), and tell the tool to aggregate on a 2 month, 1 month, 5 day, etc.
+basis, that might lead to discovering more interesting correlations! This might
+also automate some aggregation work that would have to be done anyway outside
+of the tool. For instance, if you are using cronometer to track food intake,
+you could feed the tool an exact export and let it do the aggregation for you.
+
+## To Implement: Time Shifting
+
+Lots of correlations between variables exist that are not directly matched up
+in a timeseries. For instance, if you were to track your caffeine consumption
+and energy level on an hourly basis, there may be no correlation between the
+two if you are comparing data points for that hour. However, if you instead
+compare caffeine consumption with energy level for the **next** hour, you may
+see a different signal. You could keep shifting hour by hour to see what shifts
+lead to statistically significant correlations.
+
+```
+Time Var1 Time Var2       Time Var1 Time Var2
+1pm     5  1pm   10       1pm     5  2pm   20
+2pm     2  2pm   20       2pm     2  3pm   10
+3pm     2  3pm   10  -->  3pm     2  4pm   10
+4pm     2  4pm   10       4pm     2  5pm   10
+5pm     2  5pm   10       5pm     2  6pm   10
+
+```
+
+This could be done on any time basis. For example, calories consumed and weight
+are correlated, but with some lag. Using this technique (say with daily data)
+would let you discover exactly how much lag there is.
+
+## To Implement: Time of Day Correlations
+
+We could use time of day as an explicit input variable in our correlations,
+modifying an existing variable. This would let us for example discover that
+running between 5-7pm is associated with some biomarker, but running between
+8-9am is not. I'm not sure exactly the best way to do this yet.
 
 ## Libraries to use:
 
