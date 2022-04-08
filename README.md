@@ -22,6 +22,7 @@ context here.
    - https://github.com/netzwerg/react-svg-timeline
    - https://github.com/onejgordon/react-life-timeline
    - plotly like my CGM visualization
+   - See https://mobile.twitter.com/timelinize for inspiration
  - Pull in data from momentodb spreadsheets
  - Use hazard ratios and progression of biomarkers over time to try to come up
    with a "years of life saved" if a certain biomarker is made optimal.
