@@ -3,6 +3,7 @@
     [app.specs :as specs]
     [app.csv-data-processing :as proc]
     [app.time :as time]
+    [app.math :as math]
     [oz.core :as oz]
     [kixi.stats.math :refer [sq sqrt]]
     [kixi.stats.core :as kixi]
@@ -53,9 +54,6 @@
              [k (if (#{:date :timestamp} k)
                   v
                   (js/parseFloat v))])))
-
-(defn round [n]
-  (/ (Math/round (* 1000 (+ n (. js/Number -EPSILON)))) 1000))
 
 (defn get-correlation-with-pval
   "Gets a correlation between the two given vars in the data.
@@ -127,9 +125,10 @@
                                        :scale {:type "time"
                                                :scheme "viridis"}}}}]
      :raw-data cleaned-data
-     :correlation (round (:correlation correlation-result))
+     :correlation (math/round (:correlation correlation-result))
      :p-value (:p-value correlation-result)
-     :rounded-p-value (let [rounded-pval (round (:p-value correlation-result))]
+     :rounded-p-value (let [rounded-pval
+                            (math/round (:p-value correlation-result))]
                         (if (= 0 rounded-pval) "<0.001" (str rounded-pval)))
      :datapoints (count cleaned-data)}))
 

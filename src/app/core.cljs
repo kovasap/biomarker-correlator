@@ -66,7 +66,7 @@
         in the name will be treated as the biomarker data files."]
      [:p "If you are getting permissions issues, note that you need to be
         whitelisted as this app is currently not verified with Google. Please
-        contact kovas.palunas@gmail.com if you want to be whitelisted."]
+        contact kovas[dot]palunas[at]gmail.com if you want to be whitelisted."]
      [:button {:id "authorize_button" :style {:display "none"}} "Authorize"]
      [:button {:id "signout_button" :style {:display "none"}} "Sign Out"]
      [:button {:on-click #(gd/populate-data!)}

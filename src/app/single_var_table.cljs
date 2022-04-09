@@ -1,6 +1,7 @@
 (ns app.single-var-table
   (:require
     [app.stats :as stats]
+    [app.math :as math]
     [app.specs :as specs]
     [app.biomarker-data :as biodata]
     [app.csv-data-processing :as proc]
@@ -56,8 +57,7 @@
     {:one-var one-var
      :aggregates {:score (calc-counted-score one-var-significant-correlations)
                   ; :acm-score 0
-                  :average (stats/round (/ (reduce + one-var-raw-data)
-                                         (count one-var-raw-data)))}
+                  :average (math/round (math/average one-var-raw-data))}
      :correlations (for [correlation one-var-significant-correlations]
                      {:many-var (many-var-type correlation)
                       :regression-results (:regression-results correlation)})}))

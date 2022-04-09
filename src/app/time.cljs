@@ -1,7 +1,7 @@
 (ns app.time
   (:require
-    [cljs-time.core :refer [date-time]]
-    [cljs-time.coerce :refer [to-long]]
+    [cljs-time.core :as time]
+    [cljs-time.coerce :refer [to-long from-long]]
     [clojure.string :as st]))
 
 
@@ -18,16 +18,17 @@
                        4 year
                        nil))}))))
 
-(defn map-to-timestamp
-  [{:keys [month date year]}]
-  (to-long (date-time year month date)))
-
 (def Date :string)
 (def Timestamp [:and :int [:>= 0]])
 ; Outputs dates in format https://vega.github.io/vega-lite/docs/datetime.html
 (def VegaDate [:map [:month :int]
                     [:date :int]
                     [:year :int]])
+
+(defn map-to-timestamp
+  {:malli/schema [:=> [:cat VegaDate] Timestamp]}
+  [{:keys [month date year]}]
+  (to-long (time/date-time year month date)))
 
 (defn parse-date-range
   "Converts a range like '1/1/2021 to 2/1/2021' into a single date. Will return
@@ -47,3 +48,41 @@
           parsed1)))))
 
 (st/split "4/4/4" " to ")
+
+(defn date-to-timestamp
+  {:malli/schema [:=> [:cat Date] Timestamp]}
+  [date]
+  (map-to-timestamp (parse-date-range date)))
+
+(def PeriodIdTypes
+  [:enum :month :2-month :year])
+
+(defn get-period-id
+  {:malli/schema [:=> [:cat Timestamp PeriodIdTypes] :string]}
+  [timestamp period-type]
+  (let [date-time (from-long timestamp)
+        year (time/year date-time)
+        month (time/month date-time)
+        day (time/day date-time)
+        hour (time/hour date-time)]
+    (case period-type
+      :month (str month "-" year)
+      :2-month (str (if (even? month)
+                      (str (dec month) month)
+                      (str month (inc month)))
+                    "-" year)
+      :year (str year))))
+
+(defn group-by-period
+  {:malli/schema [:=> [:cat [:sequential [:map [:timestamp Timestamp]]]
+                       PeriodIdTypes]
+                  [:map-of :string [:map [:timestamp Timestamp]]]]}
+  [data period-type]
+  (group-by #(get-period-id (:timestamp %) period-type) data))
+
+(group-by-period
+  [{:timestamp (date-to-timestamp "1/1/00") :a 1}
+   {:timestamp (date-to-timestamp "1/5/00") :a 2}
+   {:timestamp (date-to-timestamp "1/6/00") :a 3}
+   {:timestamp (date-to-timestamp "2/6/00") :a 4}]
+  :month) 
