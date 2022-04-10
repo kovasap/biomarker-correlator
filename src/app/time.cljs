@@ -5,19 +5,6 @@
     [clojure.string :as st]))
 
 
-(defn parse-date
-  [date-string]
-  (let [split (st/split (st/trim date-string) "/")]
-    (if (not (= 3 (count split)))
-      nil
-      (let [[month day year] split]
-        {:month (int month)
-         :date (int day)
-         :year (int (case (count year)
-                       2 (str "20" year)
-                       4 year
-                       nil))}))))
-
 (def Date :string)
 (def Timestamp [:and :int [:>= 0]])
 ; Outputs dates in format https://vega.github.io/vega-lite/docs/datetime.html
@@ -29,6 +16,20 @@
   {:malli/schema [:=> [:cat VegaDate] Timestamp]}
   [{:keys [month date year]}]
   (to-long (time/date-time year month date)))
+
+(defn parse-date
+  {:malli/schema [:=> [:cat Date] [:or :nil VegaDate]]}
+  [date-string]
+  (let [split (st/split (st/trim date-string) "/")]
+    (if (not (= 3 (count split)))
+      nil
+      (let [[month day year] split]
+        {:month (int month)
+         :date (int day)
+         :year (int (case (count year)
+                       2 (str "20" year)
+                       4 year
+                       nil))}))))
 
 (defn parse-date-range
   "Converts a range like '1/1/2021 to 2/1/2021' into a single date. Will return
@@ -68,15 +69,15 @@
     (case period-type
       :month (str month "-" year)
       :2-month (str (if (even? month)
-                      (str (dec month) month)
-                      (str month (inc month)))
+                      (str (dec month) "-" month)
+                      (str month "-" (inc month)))
                     "-" year)
       :year (str year))))
 
 (defn group-by-period
   {:malli/schema [:=> [:cat [:sequential [:map [:timestamp Timestamp]]]
                        PeriodIdTypes]
-                  [:map-of :string [:map [:timestamp Timestamp]]]]}
+                  [:map-of :string [:sequential [:map [:timestamp Timestamp]]]]]}
   [data period-type]
   (group-by #(get-period-id (:timestamp %) period-type) data))
 

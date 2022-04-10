@@ -25,13 +25,13 @@
   (let [rows-by-input (group-by :input results)]
     (map get-per-input-row (vals rows-by-input))))
 
-(deftest test-bad-map-sorting
-  (is (= '({:input 1 :a-datapoints 5}
-           {:input 2 :a-datapoints 5}
-           {:input 3 :b-datapoints 5}
-           {:input 4 :b-datapoints 5})
-         (make-per-input-results
-          [{:input 1 :biomarker :a :datapoints 5}
-           {:input 2 :biomarker :a :datapoints 5}
-           {:input 3 :biomarker :b :datapoints 5}
-           {:input 4 :biomarker :b :datapoints 5}]))))
+; (deftest test-bad-map-sorting
+;   (is (= '({:input 1 :a-datapoints 5}
+;            {:input 2 :a-datapoints 5}
+;            {:input 3 :b-datapoints 5}
+;            {:input 4 :b-datapoints 5})
+;          (make-per-input-results
+;           [{:input 1 :biomarker :a :datapoints 5}
+;            {:input 2 :biomarker :a :datapoints 5}
+;            {:input 3 :biomarker :b :datapoints 5}
+;            {:input 4 :biomarker :b :datapoints 5}]))))

@@ -123,14 +123,4 @@
   (for [grouped-rows (vals (time/group-by-period rows period-type))]
     (combine-rows aggregation-fn grouped-rows)))
   
-
 ; TODO explicitely forbid the "[date] to [date]" input syntax
-
-; TODO fix this
-(aggregate-data
-  (process-csv-data
-    [{:a "100" :b "20" :date "4/2/00 to 5/2/00"}
-     {:a "100" :b "20" :date "5/1/00"}]
-    [{:c "100" :d "20" :date "5/1/00"}])
-  :month
-  math/average)

@@ -45,15 +45,17 @@
   (filter (fn [datum] (every? #(not (js/isNaN (% datum))) ks))
           data))
 
-(defn make-into-floats
-  {:malli/schema [:=> [:cat
-                       [:map-of :keyword :any]]
-                  [:map-of :keyword :double]]}
-  [data]
-  (into {} (for [[k v] data]
-             [k (if (#{:date :timestamp} k)
-                  v
-                  (js/parseFloat v))])))
+; TODO make sure this only has 2 values when (+ the timestamp)
+; https://github.com/metosin/malli/issues/652 is resolved
+(def PairedData [:sequential [:map-of [:keyword :double]]])
+
+(defn clean-data
+  {:malli/schema [:=> [:cat :keyword :keyword [:sequential proc/ProcessedRow]]
+                  PairedData]}
+  [var1 var2 data]
+  (map #(select-keys % [:timestamp var1 var2])
+        (filter-missing data var1 var2)))
+
 
 (defn get-correlation-with-pval
   "Gets a correlation between the two given vars in the data.
@@ -89,13 +91,10 @@
         [:datapoints :int]])
 
 (defn calc-correlation
+  {:malli/schema [:=> [:cat :keyword :keyword [:sequential proc/ProcessedRow]]
+                  CorrelationResults]}
   [var1 var2 data]
-  ; [keyword? keyword? :app.specs/maps
-  ;  => ::regression-results]
-  (let [cleaned-data (map #(select-keys % [:timestamp var1 var2])
-                          (filter-missing
-                            data ; (map make-into-floats data)
-                            var1 var2))
+  (let [cleaned-data (clean-data var1 var2 data)
         ; linear-result (transduce identity
         ;                          (kixi/simple-linear-regression var1 var2)
         ;                          cleaned-data))
@@ -104,7 +103,6 @@
         ; error (transduce identity
         ;                  (kixi/regression-standard-error var1 var2)
         ;                  cleaned-data]
-    ; (prn (first  cleaned-data))
     ; (if (and (= var1 :na) (= var2 :hdl))
     ;   (do (prn cleaned-data) (prn correlation-result))
     ; {:linear-slope (round (if (nil? linear-result) nil
