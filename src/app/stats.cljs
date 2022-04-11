@@ -47,7 +47,7 @@
 
 ; TODO make sure this only has 2 values when (+ the timestamp)
 ; https://github.com/metosin/malli/issues/652 is resolved
-(def PairedData [:sequential [:map-of [:keyword :double]]])
+(def PairedData [:sequential [:map-of :keyword [:or :int :double]]])
 
 (defn clean-data
   {:malli/schema [:=> [:cat :keyword :keyword [:sequential proc/ProcessedRow]]

@@ -118,9 +118,7 @@
   {:malli/schema [:=> [:cat [:sequential ProcessedRow]
                             time/PeriodIdTypes
                             [:=> [:cat [:sequential :double]] :double]]
-                  [:sequential ProcessedRow]]}
+                  [:map-of :string ProcessedRow]]}
   [rows period-type aggregation-fn]
-  (for [grouped-rows (vals (time/group-by-period rows period-type))]
-    (combine-rows aggregation-fn grouped-rows)))
-  
-; TODO explicitely forbid the "[date] to [date]" input syntax
+  (into {} (for [[period grouped-rows] (time/group-by-period rows period-type)]
+             [period (combine-rows aggregation-fn grouped-rows)])))

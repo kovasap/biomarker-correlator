@@ -69,8 +69,8 @@
     (case period-type
       :month (str month "-" year)
       :2-month (str (if (even? month)
-                      (str (dec month) "-" month)
-                      (str month "-" (inc month)))
+                      (str (dec month) "+" month)
+                      (str month "+" (inc month)))
                     "-" year)
       :year (str year))))
 
