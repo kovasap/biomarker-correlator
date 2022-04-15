@@ -32,7 +32,8 @@
 
  
 (defn home-page []
-  (let [aggregation-granularity (r/atom :2-month)]
+  (let [aggregation-granularity (r/atom :2-month)
+        p-values-rounded? (r/atom false)]
     (fn []
       (let [{:keys [input-file-name biomarker-file-name
                     input-data biomarker-data]} @csv/csv-data
@@ -54,8 +55,7 @@
                                      :biomarker :input)
             pairwise-correlations-for-table (stats/enliten pairwise-correlations)
             flat-results (map flatten-map pairwise-correlations-for-table)
-            flat-results-atom (r/atom flat-results)
-            p-values-rounded? (r/atom true)]
+            flat-results-atom (r/atom flat-results)]
         [:div.app.content
          [:h1.title "Biomarker Correlator"]
          [:p "This application calculates cross correlations between inputs and

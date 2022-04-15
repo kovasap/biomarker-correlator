@@ -4,6 +4,7 @@
     [app.specs :as specs]
     [oz.core :as oz]
     [app.csv-data-processing :as proc]
+    [clojure.set :refer [union]]
     [cljs.spec.alpha :as s]))
 
 ; TODO fix when https://github.com/metosin/malli/issues/652 is resolved
@@ -32,11 +33,10 @@
   [personal-data]
   (if (empty? personal-data)
     :no-data
-    (-> personal-data
-      first
-      (#(dissoc % :timestamp))
-      keys
-      first)))
+    (let [var-names (reduce union (for [pt personal-data]
+                                    (set (keys (dissoc pt :timestamp)))))]
+      (assert (= 1 (count var-names)))
+      (first var-names))))
 
 
 (defn add-hrs
