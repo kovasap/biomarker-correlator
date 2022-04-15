@@ -56,7 +56,7 @@
   (map-to-timestamp (parse-date-range date)))
 
 (def PeriodIdTypes
-  [:enum :month :2-month :year])
+  [:enum :month :2-month :year :none])
 
 (defn get-period-id
   {:malli/schema [:=> [:cat Timestamp PeriodIdTypes] :string]}
@@ -67,6 +67,7 @@
         day (time/day date-time)
         hour (time/hour date-time)]
     (case period-type
+      :none (str timestamp)
       :month (str month "-" year)
       :2-month (str (if (even? month)
                       (str (dec month) "+" month)

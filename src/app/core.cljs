@@ -32,7 +32,7 @@
 
  
 (defn home-page []
-  (let [aggregation-granularity (r/atom :2-month)
+  (let [aggregation-granularity (r/atom :none)
         p-values-rounded? (r/atom false)]
     (fn []
       (let [{:keys [input-file-name biomarker-file-name
@@ -109,6 +109,15 @@
             [:label {:for period-type} (name period-type)]])
          [:p "These aggregate periods were found and are being used:"]
          [:pre (st/join ", " aggregates)]
+         [:p "If the periods are just a bunch of large numbers, then no
+          aggregation is being done (each number is the timestamp of an
+          individual data points)."]
+         [:p "Not yet implemented is to do a two-tiered aggregation (e.g.
+          average all calories eaten in a day, then average those cals-per-day
+          numbers across a two-month span). Currently a two-month aggregation
+          of a bunch of per-meal calorie datapoints will just return the
+          average number of calories per meal, which is not really what we
+          want."]
          [:p "Note that " [:code "<date>-to-<date>"] " syntax in the input
           files will just take the first date at the time point and ignore
           the second!"]
