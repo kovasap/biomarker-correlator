@@ -10,7 +10,7 @@
         [:tooltip :string]
         [:laneId :string]
         [:startTimeMillis :int]
-        [:endTimeMillis :int]])
+        [:endTimeMillis {:optional true} :int]])
 
 (def Lane
   [:map [:laneId :string]
@@ -26,9 +26,9 @@
     {:eventId (str (:timestamp row) (name k))
      :tooltip (str (:date row))
      :laneId  (name k)
-     :startTimeMillis (:timestamp row)
+     :startTimeMillis (:timestamp row)}))
      ; event is one day long for now
-     :endTimeMillis (+ 86400000 (:timestamp row))}))
+     ; :endTimeMillis (+ 86400000 (:timestamp row))}))
 
 (defn get-unique-lanes
   {:malli/schema [:=> [:cat [:sequential Event]]
