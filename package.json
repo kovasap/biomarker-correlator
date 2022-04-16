@@ -11,6 +11,7 @@
     "react": "^17.0.2",
     "react-data-grid": "7.0.0-beta.11",
     "react-dom": "^17.0.2",
+    "react-svg-timeline": "^0.22.0",
     "stream-browserify": "^3.0.0",
     "vega-embed": "^6.20.7"
   }

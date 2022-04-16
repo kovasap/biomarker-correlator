@@ -6,6 +6,7 @@
     [app.math :as math]
     [app.specs]
     [app.time :as time]
+    [app.timeline :refer [timeline-for-page]]
     [app.csv-data-processing :as proc]
     [app.comparison-matrix-table :as comp-matrix-tbl]
     [app.single-var-table :as single-var-table]
@@ -39,19 +40,20 @@
                     input-data biomarker-data]} @csv/csv-data
             inputs (get-vars input-data)
             biomarkers (get-vars biomarker-data)
+            processed-data (proc/process-csv-data input-data biomarker-data)
             data-by-aggregates (proc/aggregate-data
-                                 (proc/process-csv-data input-data biomarker-data)
+                                 processed-data
                                  @aggregation-granularity
                                  math/average)
             aggregates (keys data-by-aggregates)
-            processed-data (vals data-by-aggregates)
+            aggregated-data (vals data-by-aggregates)
             pairwise-correlations (stats/compute-correlations
-                                    inputs biomarkers processed-data)
+                                    inputs biomarkers aggregated-data)
             input-correlations (single-var-table/make-all-correlations
-                                 pairwise-correlations processed-data
+                                 pairwise-correlations aggregated-data
                                  :input :biomarker)
             biomarker-correlations (single-var-table/make-all-correlations
-                                     pairwise-correlations processed-data
+                                     pairwise-correlations aggregated-data
                                      :biomarker :input)
             pairwise-correlations-for-table (stats/enliten pairwise-correlations)
             flat-results (map flatten-map pairwise-correlations-for-table)
@@ -121,6 +123,7 @@
          [:p "Note that " [:code "<date>-to-<date>"] " syntax in the input
           files will just take the first date at the time point and ignore
           the second!"]
+         (timeline-for-page processed-data)
          [:h3 "Per-Input Table"]
          [:p "Not statistically significant results are displayed with greyed-out
         text.  The score for each input is calculated as the number of
