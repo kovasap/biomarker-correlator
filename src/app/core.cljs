@@ -7,19 +7,22 @@
     [app.specs]
     [app.time :as time]
     [app.timeline :refer [timeline-for-page]]
-    [app.csv-data-processing :as proc]
+    [app.csv-data-processing :refer [process-csv-data DatedRow]]
+    [app.input-data-validation :refer [get-validation-string
+                                       get-all-data-validation-string]]
+    [app.aggregation :refer [aggregate-data aggregation-section]]
     [app.comparison-matrix-table :as comp-matrix-tbl]
     [app.single-var-table :as single-var-table]
     [app.ui :as ui]
+    [malli.core :as m]
     [malli.dev.cljs :as dev]
     [malli.dev.pretty :as pretty]
     [reagent.core :as r]
-    [reagent.dom :as d]
-    [clojure.string :as st]))
+    [reagent.dom :as d]))
 
 (defn get-vars
   "Gets all variables (csv columns) from parsed csv maps besides the date."
-  {:malli/schema [:=> [:cat [:sequential proc/DatedRow]]
+  {:malli/schema [:=> [:cat [:sequential DatedRow]]
                   [:sequential :keyword]]}
   [data]
   (filter #(not= % :date) (keys (first data))))
@@ -33,19 +36,20 @@
 
  
 (defn home-page []
-  (let [aggregation-granularity (r/atom :none)
-        p-values-rounded? (r/atom false)]
+  (let [aggregation-granularity
+        (r/atom :none :validator #(m/validate time/PeriodIdTypes %))
+        p-values-rounded?
+        (r/atom false)]
     (fn []
       (let [{:keys [input-file-name biomarker-file-name
                     input-data biomarker-data]} @csv/csv-data
             inputs (get-vars input-data)
             biomarkers (get-vars biomarker-data)
-            processed-data (proc/process-csv-data input-data biomarker-data)
-            data-by-aggregates (proc/aggregate-data
+            processed-data (process-csv-data input-data biomarker-data)
+            data-by-aggregates (aggregate-data
                                  processed-data
                                  @aggregation-granularity
                                  math/average)
-            aggregates (keys data-by-aggregates)
             aggregated-data (vals data-by-aggregates)
             pairwise-correlations (stats/compute-correlations
                                     inputs biomarkers aggregated-data)
@@ -90,40 +94,17 @@
          [:div.topbar.hidden-print "\"Upload\" biomarker data"
           [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
          [:br]
-         [:div "Input validation: " (proc/get-validation-string input-data)]
-         [:div "Biomarker validation: " (proc/get-validation-string biomarker-data)]
-         [:div "Cross data validation: " (proc/get-all-data-validation-string
+         [:div "Input validation: " (get-validation-string input-data)]
+         [:div "Biomarker validation: " (get-validation-string biomarker-data)]
+         [:div "Cross data validation: " (get-all-data-validation-string
                                            input-data biomarker-data)]
 
-         [:h4 "Aggregation"]
-         [:p "If your input data is not already aggregated to your desired time
-        granularity you can aggregate it here. This is necessary if for example
-        you have exact timings for all your measurements, but would like to
-        correlate them to each other based on the windows of time they fall
-        into."]
-         (for [period-type (rest time/PeriodIdTypes)]
-           [:div {:key period-type}
-            [:input {:type :radio
-                     :name "period-type"
-                     :id period-type
-                     :on-change #(reset! aggregation-granularity
-                                         (keyword (-> % .-target .-id)))}]
-            [:label {:for period-type} (name period-type)]])
-         [:p "These aggregate periods were found and are being used:"]
-         [:pre (st/join ", " aggregates)]
-         [:p "If the periods are just a bunch of large numbers, then no
-          aggregation is being done (each number is the timestamp of an
-          individual data points)."]
-         [:p "Not yet implemented is to do a two-tiered aggregation (e.g.
-          average all calories eaten in a day, then average those cals-per-day
-          numbers across a two-month span). Currently a two-month aggregation
-          of a bunch of per-meal calorie datapoints will just return the
-          average number of calories per meal, which is not really what we
-          want."]
-         [:p "Note that " [:code "<date>-to-<date>"] " syntax in the input
-          files will just take the first date at the time point and ignore
-          the second!"]
-         (timeline-for-page processed-data)
+         (aggregation-section
+           aggregation-granularity (keys data-by-aggregates))
+
+         (timeline-for-page
+           processed-data (keys data-by-aggregates))
+
          [:h3 "Per-Input Table"]
          [:p "Not statistically significant results are displayed with greyed-out
         text.  The score for each input is calculated as the number of

@@ -1,10 +1,6 @@
 (ns app.csv-data-processing
   (:require
-    [app.time :as time]
-    [app.specs :as specs]
-    [app.math :as math]
-    [clojure.string :as st]
-    [clojure.set :refer [union]]))
+    [app.time :as time]))
 
 (def DatedRow
   [:map [:date time/Date]])
@@ -53,36 +49,6 @@
 
 (floatify-data [{:a "100" :b "20" :date "4/2/00 to 5/2/00"}])
 
-; TODO add spec validation to this function
-(defn get-all-data-validation-string
-  {:malli/schema [:=> [:cat [:* [:sequential DatedRow]]]
-                  specs/Hiccup]}
-  [& sets-of-rows]
-  (let [headers (remove #(= :date %)
-                        (flatten (map #(keys (first %)) sets-of-rows)))
-        duplicate-headers (for [[id freq] (frequencies headers)
-                                :when (> freq 1)]
-                            id)]
-    (if (seq duplicate-headers)  ; if not empty
-      [:div {:style {:color "red"}}
-       "Some inputs headers were duplicated: " (st/join ", " duplicate-headers)]
-      [:div {:style {:color "green"}} "Data validated successfully"])))
-
-(defn dups [sequence]
-  (for [[element freq] (frequencies sequence)
-        :when (> freq 1)]
-   element))
-
-(defn get-validation-string
-  {:malli/schema [:=> [:cat [:sequential DatedRow]]
-                  specs/Hiccup]}
-  [rows]
-  (let [duplicate-dates (dups (map :date rows))]
-    (if (> (count duplicate-dates) 0)
-      [:div {:style {:color "red"}}
-       "Repeated dates found in file " (str duplicate-dates) "!"]
-      [:div {:style {:color "green"}} "Data validated successfully"])))
-
 (defn process-csv-data
   {:malli/schema [:=> [:cat [:* [:sequential DatedRow]]]
                   [:sequential ProcessedRow]]}
@@ -95,30 +61,3 @@
                    {:a "100" :b "20" :date "4/2/10"}]
                   [{:c "100" :d "20" :date "4/2/10"}
                    {:c "" :d "20" :date "4/2/10"}])
-
-(defn combine-rows
-  {:malli/schema [:=> [:cat [:=> [:cat [:sequential :double]] :double]
-                            [:sequential ProcessedRow]]
-                  ProcessedRow]}
-  [aggregation-fn rows]
-  (let [earliest-row (first (sort-by :timestamp rows))
-        unique-keys (reduce union (for [row rows] (set (keys row))))]
-    (-> (into {} (for [k unique-keys
-                       :when (not (contains? #{:timestamp :date} k))]
-                   [k (aggregation-fn (filter #(not (nil? %)) (map k rows)))]))
-        (assoc :timestamp (:timestamp earliest-row))
-        (assoc :date      (:date earliest-row)))))
-
-(combine-rows math/average [{:b 50} {:a 20 :b 40}])
-
-(defn aggregate-data
-  "Merges data points in the input together if they fall inside the same time
-  window. The merged data point will use the earliest timestamp from all the points
-  in the same window."
-  {:malli/schema [:=> [:cat [:sequential ProcessedRow]
-                            time/PeriodIdTypes
-                            [:=> [:cat [:sequential :double]] :double]]
-                  [:map-of :string ProcessedRow]]}
-  [rows period-type aggregation-fn]
-  (into {} (for [[period grouped-rows] (time/group-by-period rows period-type)]
-             [period (combine-rows aggregation-fn grouped-rows)])))

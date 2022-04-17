@@ -1,7 +1,7 @@
 (ns app.time
   (:require
     [cljs-time.core :as time]
-    [cljs-time.coerce :refer [to-long from-long]]
+    [cljs-time.coerce :refer [to-long from-long to-string]]
     [clojure.string :as st]))
 
 
@@ -50,6 +50,16 @@
 
 (st/split "4/4/4" " to ")
 
+(defn timestamp-to-full-string
+  {:malli/schema [:=> [:cat Timestamp] :string]}
+  [timestamp]
+  (to-string (from-long timestamp)))
+
+(defn timestamp-to-date-string
+  {:malli/schema [:=> [:cat Timestamp] :string]}
+  [timestamp]
+  (first (st/split (to-string (from-long timestamp)) "T")))
+
 (defn date-to-timestamp
   {:malli/schema [:=> [:cat Date] Timestamp]}
   [date]
@@ -58,8 +68,13 @@
 (def PeriodIdTypes
   [:enum :month :2-month :year :none])
 
-(defn get-period-id
-  {:malli/schema [:=> [:cat Timestamp PeriodIdTypes] :string]}
+(def PeriodRange
+  "Start and end timestamps for a range of time."
+  [:cat Timestamp Timestamp])
+
+(defn get-period-range
+  "Returns the period range in which the input timestamp falls."
+  {:malli/schema [:=> [:cat Timestamp PeriodIdTypes] PeriodRange]}
   [timestamp period-type]
   (let [date-time (from-long timestamp)
         year (time/year date-time)
@@ -67,20 +82,23 @@
         day (time/day date-time)
         hour (time/hour date-time)]
     (case period-type
-      :none (str timestamp)
-      :month (str month "-" year)
-      :2-month (str (if (even? month)
-                      (str (dec month) "+" month)
-                      (str month "+" (inc month)))
-                    "-" year)
-      :year (str year))))
+      :none [timestamp timestamp]
+      :month [(to-long (time/date-time year month 1)) 
+              (to-long (time/date-time year (inc month) 1))] 
+      :2-month (if (even? month)
+                 [(to-long (time/date-time year (dec month) 1))
+                  (to-long (time/date-time year (inc month) 1))]
+                 [(to-long (time/date-time year month 1))
+                  (to-long (time/date-time year (+ 2 month) 1))])
+      :year [(to-long (time/date-time year 1 1))
+             (to-long (time/date-time (inc year) 1 1))])))
 
 (defn group-by-period
   {:malli/schema [:=> [:cat [:sequential [:map [:timestamp Timestamp]]]
                        PeriodIdTypes]
                   [:map-of :string [:sequential [:map [:timestamp Timestamp]]]]]}
   [data period-type]
-  (group-by #(get-period-id (:timestamp %) period-type) data))
+  (group-by #(get-period-range (:timestamp %) period-type) data))
 
 (group-by-period
   [{:timestamp (date-to-timestamp "1/1/00") :a 1}
