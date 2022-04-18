@@ -96,7 +96,8 @@
 (defn group-by-period
   {:malli/schema [:=> [:cat [:sequential [:map [:timestamp Timestamp]]]
                        PeriodIdTypes]
-                  [:map-of :string [:sequential [:map [:timestamp Timestamp]]]]]}
+                  [:map-of PeriodRange [:sequential
+                                        [:map [:timestamp Timestamp]]]]]}
   [data period-type]
   (group-by #(get-period-range (:timestamp %) period-type) data))
 

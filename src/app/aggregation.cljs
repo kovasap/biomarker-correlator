@@ -55,9 +55,10 @@
                                    (keyword (-> % .-target .-id)))}]
       [:label {:for period-type} (name period-type)]])
    [:p "These aggregate periods were found and are being used:"]
-   [:pre (st/join "\n" (for [[start end] (sort aggregate-ranges)]
-                         (str (time/timestamp-to-date-string start) " to "
-                              (time/timestamp-to-date-string end))))]
+   [:pre {:style {:max-height "300px"}}
+    (st/join "\n" (for [[start end] (sort aggregate-ranges)]
+                    (str (time/timestamp-to-date-string start) " to "
+                         (time/timestamp-to-date-string end))))]
    [:p "Not yet implemented is to do a two-tiered aggregation (e.g.
     get total calories eaten in a day, then average those cals-per-day
     numbers across a two-month span). Currently a two-month aggregation

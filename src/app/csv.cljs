@@ -5,7 +5,7 @@
    [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
    [cljs.core.async :refer-macros [go go-loop alt!]]
    [reagent.core :as r]
-   [clojure.string :refer [lower-case]]))
+   [clojure.string :refer [lower-case replace]]))
 
 
 ;; --------- Export as CSV ------------------------------------------
@@ -128,9 +128,17 @@
   {:malli/schema [:=> [:cat [:sequential [:map-of :string :string]]]
                   [:sequential [:map-of :keyword :string]]]}
   [parsed-data]
-  (map (fn [row] (into {} (for [[k v] row]
-                            [(keyword (lower-case k)) v])))
-       parsed-data))
+  (for [row parsed-data]
+    (into {} (for [[k v] row]
+               [(-> k
+                  (replace #"/" "_over_")
+                  (replace #" " "_")
+                  lower-case
+                  keyword)
+                v]))))
+
+; (replace "t/g" #"/" "_")
+; (replace "t g" #" " "_")
 
 (defn my-parse-csv [csv-data]
   (let [parsed-data

@@ -2,6 +2,7 @@
   (:require 
     ["react-svg-timeline" :refer (Timeline)]
     [app.specs :refer [ReagentComponent]]
+    [app.ui :as ui]
     [app.time :refer [timestamp-to-date-string PeriodRange]]
     [app.csv-data-processing :refer [ProcessedRow]]))
 
@@ -17,6 +18,10 @@
   [:map [:laneId :string]
         [:label :string]])
 
+; TODO plot numeric data here as a line/scatter chart as opposed to just event
+; dots.  https://github.com/netzwerg/react-svg-timeline/issues/90 should shadow-cljs
+; how to do this.  If this question is unanswered, consider switching to
+; plotly.
 (defn rows-to-events
   {:malli/schema [:=> [:cat [:sequential ProcessedRow]]
                   [:sequential Event]]}
@@ -52,20 +57,23 @@
       {:laneId id
        :label id})))
 
+(def single-lane-height 55)
+
 (defn make-timeline
   "Creates a react-svg-timeline from event data.
   
   https://github.com/netzwerg/react-svg-timeline"
   {:malli/schema [:=> [:cat [:sequential Event]] ReagentComponent]}
   [events]
-  [:div
-   [:> Timeline
-    {:events (clj->js events)
-     :lanes (clj->js (get-unique-lanes events))
-     :component "div" ; removes <p> cannot be descendant of <p> error
-     :width 1000
-     :height 600
-     :dateFormat (fn [ms] (.toLocaleString (js/Date. ms)))}]])
+  (let [unique-lanes (get-unique-lanes events)]
+    [:div
+     [:> Timeline
+      {:events (clj->js events)
+       :lanes (clj->js unique-lanes)
+       :component "div" ; removes <p> cannot be descendant of <p> error
+       :width 1000
+       :height (* single-lane-height (count unique-lanes))
+       :dateFormat (fn [ms] (.toLocaleString (js/Date. ms)))}]]))
   
 (defn timeline-for-page
   {:malli/schema [:=> [:cat [:sequential ProcessedRow]
@@ -73,6 +81,7 @@
                   ReagentComponent]}
   [rows aggregate-ranges]
   [:h3 "Timeline"
-    (make-timeline (concat (rows-to-events rows)
-                           (ranges-to-events aggregate-ranges)))])
+    [ui/hideable
+      (make-timeline (concat (rows-to-events rows)
+                             (ranges-to-events aggregate-ranges)))]])
           

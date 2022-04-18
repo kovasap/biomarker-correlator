@@ -1,6 +1,7 @@
 (ns app.csv-data-processing
   (:require
-    [app.time :as time]))
+    [app.time :as time]
+    [clojure.string :refer [replace]]))
 
 (def DatedRow
   [:map [:date time/Date]])
