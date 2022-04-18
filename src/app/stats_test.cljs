@@ -117,3 +117,10 @@
     (is (= correlation 0.132))
     (is (= p-value 0.5776584722913792))
     (is (= datapoints 20))))
+
+(deftest missing-keys-not-counted
+  (is (= (stats/clean-data
+           :oxalate :crp
+           '({:timestamp 1566172800000, :date "hi" :oxalate 1909.7, :crp 0.47}
+             {:timestamp 1534723200000, :date "hi" :oxalate 2093.5}))
+         '({:timestamp 1566172800000, :oxalate 1909.7, :crp 0.47}))))

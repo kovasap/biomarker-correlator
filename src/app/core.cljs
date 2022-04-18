@@ -116,8 +116,8 @@
          [:input {:type :checkbox
                   :name :p-values-rounded?
                   :on-change #(reset! p-values-rounded? (-> % .-target .-checked))
-                  :value true
-                  :defaultChecked true}]
+                  :value @p-values-rounded?
+                  :defaultChecked @p-values-rounded?}]
          (ui/maps-to-datagrid
            (comp-matrix-tbl/make-comparison-matrix-data
             pairwise-correlations-for-table

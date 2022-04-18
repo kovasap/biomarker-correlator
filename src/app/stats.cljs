@@ -42,7 +42,11 @@
   "Remove maps from data (collection of maps) for which any of the given keys
   are not present or have nil values."
   [data & ks]
-  (filter (fn [datum] (every? #(not (js/isNaN (% datum))) ks))
+  (filter (fn [point]
+            (every? (fn [k]
+                      (and (not (js/isNaN (k point)))
+                           (contains? point k)))
+                    ks))
           data))
 
 ; TODO make sure this only has 2 values when (+ the timestamp)
@@ -55,7 +59,6 @@
   [var1 var2 data]
   (map #(select-keys % [:timestamp var1 var2])
         (filter-missing data var1 var2)))
-
 
 (defn get-correlation-with-pval
   "Gets a correlation between the two given vars in the data.
@@ -103,8 +106,8 @@
         ; error (transduce identity
         ;                  (kixi/regression-standard-error var1 var2)
         ;                  cleaned-data]
-    ; (if (and (= var1 :na) (= var2 :hdl))
-    ;   (do (prn cleaned-data) (prn correlation-result))
+    ; (if (and (= var1 :oxalate) (= var2 :crp))
+    ;   (do (prn data) (prn correlation-result))
     ; {:linear-slope (round (if (nil? linear-result) nil
     ;                           (last (kixi-p/parameters linear-result)))]
     ;  :linear-r-squared (round rsq)
