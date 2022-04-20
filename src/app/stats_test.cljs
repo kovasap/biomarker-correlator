@@ -124,3 +124,44 @@
            '({:timestamp 1566172800000, :date "hi" :oxalate 1909.7, :crp 0.47}
              {:timestamp 1534723200000, :date "hi" :oxalate 2093.5}))
          '({:timestamp 1566172800000, :oxalate 1909.7, :crp 0.47}))))
+
+(deftest p-values
+  (let [{:keys [correlation p-value datapoints]}
+        (stats/calc-correlation
+           :oxalate :neut
+           [{:oxalate 259.3 :neut 1584}
+            {:oxalate 179.0  :neut 1974}
+            {:oxalate 249.9  :neut 2600}
+            {:oxalate 1404.8 :neut 2068}
+            {:oxalate 978.4  :neut 1404}
+            {:oxalate 825.8  :neut 1872}
+            {:oxalate 1150.3 :neut 2025}
+            {:oxalate 1622.0 :neut 3300}
+            {:oxalate 1656.1 :neut 1974}
+            {:oxalate 1913.9 :neut 1720}
+            {:oxalate 1822.4 :neut 2750}
+            {:oxalate 2280.6 :neut 2385}
+            {:oxalate 2104.0 :neut 2484}
+            {:oxalate 2238.0 :neut 1974}
+            {:oxalate 2093.5 :neut 1848}
+            {:oxalate 1966.3 :neut 2400}
+            {:oxalate 1914.0 :neut 2646}
+            {:oxalate 2041.0 :neut 2703}
+            {:oxalate 2154.0 :neut 2436}
+            {:oxalate 2074.4 :neut 3538}
+            {:oxalate 1613.9 :neut 2679}
+            {:oxalate 1927.6 :neut 2499}
+            {:oxalate 1588.1 :neut 2750}
+            {:oxalate 1638.9 :neut 2444}
+            {:oxalate 1576.4 :neut 2601}
+            {:oxalate 2184.1 :neut 2024}
+            {:oxalate 1952.1 :neut 2678}
+            {:oxalate 2064.6 :neut 2548}
+            {:oxalate 1557.1 :neut 2652}
+            {:oxalate 1027.3 :neut 2496}
+            {:oxalate 1289.8 :neut 2352}
+            {:oxalate 1204.3 :neut 2062}
+            {:oxalate 1187.4 :neut 2387}])]
+    (is (= correlation 0.336))
+    (is (= p-value 0.056224303488854016))
+    (is (= datapoints 33))))
