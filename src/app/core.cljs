@@ -72,8 +72,9 @@
         client side in the browser. Therefore, the page can be saved and run
         offline as needed."]
          ; TODO embed this or another video onto the page.
-         [:p "See https://www.youtube.com/watch?v=3N0e9Es1pv8 for an overview
-          of how this is useful."]
+         [:p "See " [:a {:href "https://www.youtube.com/watch?v=3N0e9Es1pv8"}
+                     "https://www.youtube.com/watch?v=3N0e9Es1pv8"]
+          " for an overview of how this is useful."]
          ; Google drive integration controlled by public/js/gdrive.js.
          [:h3 "Data Ingestion"]
          [:h4 "Google Drive Integration"]

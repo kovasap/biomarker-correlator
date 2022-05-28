@@ -99,6 +99,10 @@
                   [:map-of PeriodRange [:sequential
                                         [:map [:timestamp Timestamp]]]]]}
   [data period-type]
+  (prn "GROUP BY PERIOD")
+  (prn data)
+  (prn period-type)
+  (prn (map #(map from-long (get-period-range (:timestamp %) period-type)) data))
   (group-by #(get-period-range (:timestamp %) period-type) data))
 
 (group-by-period
@@ -106,4 +110,4 @@
    {:timestamp (date-to-timestamp "1/5/00") :a 2}
    {:timestamp (date-to-timestamp "1/6/00") :a 3}
    {:timestamp (date-to-timestamp "2/6/00") :a 4}]
-  :month) 
+  :none) 
