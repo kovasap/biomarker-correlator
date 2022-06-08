@@ -20,8 +20,10 @@ context here.
 
  - Add timeline visualization. Candidates:
    - https://github.com/netzwerg/react-svg-timeline
+     - See https://github.com/netzwerg/react-svg-timeline/issues/90
    - https://github.com/onejgordon/react-life-timeline
    - plotly like my CGM visualization
+     - https://nextjournal.com/btowers/using-plotly-with-clojure
    - See https://mobile.twitter.com/timelinize for inspiration
  - Pull in data from momentodb spreadsheets
  - Use hazard ratios and progression of biomarkers over time to try to come up

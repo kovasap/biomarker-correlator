@@ -148,6 +148,10 @@
                                         :trim true})))]
           ; We do this ourselves in -standardize-keys
           ; :keywordize-keys true)]
+    (prn "CSV INPUT")
+    (prn csv-data)
+    (prn "CSV PARSED")
+    (prn parsed-data)
     (-> parsed-data
       -standardize-keys
       -remove-empty-rows
