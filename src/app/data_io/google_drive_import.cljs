@@ -1,10 +1,11 @@
 ; Depends on code in public/js/gdrive.js to setup the js/gapi.
-(ns app.google-drive
+(ns app.data-io.google-drive-import
   (:require
-    [app.csv :as csv]
+    [app.data-atom :refer [data]]
+    [app.data-io.csv-parsing :refer [parse-csv]]
     [reagent.core :as r]
-    [cljs.core.async :refer [chan put! take! >! <! buffer dropping-buffer sliding-buffer timeout close! alts!]]
-    [cljs.core.async :refer-macros [go go-loop alt!]]
+    [cljs.core.async :refer [chan put! take! >! <! timeout close! alts!]]
+    [cljs.core.async :refer-macros [go-loop alt!]]
     [clojure.string :as st]))
 
 (defn ^js/gapi get-gapi
@@ -17,12 +18,6 @@
 
 (def found-files
   (r/atom []))
-
-(def get-biomarker-correlator-folder-request
-  {:pageSize 100
-   :q "mimeType='application/vnd.google-apps.folder'
-       and name='biomarker-correlator'"
-   :fields "nextPageToken, files(id, name)"})
 
 ; Check out
 ; https://www.learn-clojurescript.com/section-4/lesson-25-intro-to-core-async/
@@ -78,11 +73,11 @@
   (put! get-file-ids file-id)
   (take! file-datas
          (fn [response]
-           (swap! csv/csv-data assoc
-                  data-key (csv/my-parse-csv (:body response))))))
+           (swap! data assoc
+                  data-key (parse-csv (:body response))))))
 
 (defn get-data-key
-  "Returns the key under which to add the data to the csv-data atom. Returns
+  "Returns the key under which to add the data to the data atom. Returns
   nil if the file in question should not be parsed (it is not a csv file, or
   otherwise isn't parsable)"
   [file-name]
@@ -116,3 +111,24 @@
   (put! list-files-requests {:q "mimeType='application/vnd.google-apps.folder'
                                and name='biomarker-correlator'"})
   (take! listed-files #(get-folder-file-data (get-single-file-id %))))
+
+(defn google-drive-ui []
+  [:div
+   [:h4 "Google Drive Integration"]
+   [:p
+    "Once signed in and authorized, this application will search through
+     your Google Drive, find a folder named \"biomarker-correlator\", and then
+     process the files within that folder. Any CSV files with \"inputs\" in
+     the name will be treated as the input data files and any with \"biomarkers\"
+     in the name will be treated as the biomarker data files."]
+   [:p
+    "If you are getting permissions issues, note that you need to be
+     whitelisted as this app is currently not verified with Google. Please
+     contact kovas[dot]palunas[at]gmail.com if you want to be whitelisted."]
+   [:button {:id "authorize_button" :style {:display "none"}}
+    "Authorize"]
+   [:button {:id "signout_button" :style {:display "none"}}
+    "Sign Out"]
+   [:button {:on-click #(populate-data!)}
+    "Fetch Google Drive Data"]
+   [:pre "Found files " (str @found-files)]])

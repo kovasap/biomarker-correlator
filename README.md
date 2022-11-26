@@ -16,6 +16,17 @@ similar to my other project https://github.com/kovasap/autojournal. See
 https://kovasap.github.io/docs/health-and-longevity/tracking-health/ for more
 context here.
 
+## Design
+
+1. Input: List of events; each row has a timestamp and some data
+1. Matching: Pair event data into single row
+1. Splitting: determine what should be correlated with what
+1. Input: Two files of matched events (inputs and biomarkers)
+1. Aggregation: Determine how matched rows should be averaged together (and
+   given the same time point) before correlation.
+1. Correlation: Calculate pairwise correlations between every input and every
+   biomarker.
+
 ## TODOs
 
  - Add timeline visualization. Candidates:

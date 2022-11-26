@@ -34,6 +34,28 @@
   (into (sorted-map-by <) (filter #(and (vector? %) (not (map? (last %))))
                                 (tree-seq associative? seq data))))
 
+
+(defn ingest-events
+  "Get a list of events not yet matched together for correlation."
+  {:malli/schema [:=> [:cat ] [:sequential DatedRow]]}
+  [])
+
+(defn match-events
+  "Combine raw data rows into single matched rows containing all data to be correlated."
+  {:malli/schema [:=> [:cat [:sequential DatedRow] MatchingSpec] DatedRow]}
+  [rows matching-spec])
+
+(defn split-matched-events
+  "Separate a list of matched events into 'input' and 'biomarker' lists."
+  {:malli/schema [:=> [:cat [:sequential DatedRow]]
+                  [:cat [:sequential DatedRow] [:sequential DatedRow]]]}
+  [rows])
+
+(defn ingest-matched-events
+  "Ingest 'input' or 'biomarker' datasets (this function should be called twice)."
+  {:malli/schema [:=> [:cat] [:sequential DatedRow]]}
+  [data-name])
+
  
 (defn home-page []
   (let [aggregation-granularity
@@ -80,33 +102,6 @@
                      "https://www.youtube.com/watch?v=3N0e9Es1pv8"]
           " for an overview of how this is useful."]
          ; Google drive integration controlled by public/js/gdrive.js.
-         [:h3 "Data Ingestion"]
-         [:h4 "Google Drive Integration"]
-         [:p "Once signed in and authorized, this application will search through
-        your Google Drive, find a folder named \"biomarker-correlator\", and then
-        process the files within that folder. Any CSV files with \"inputs\" in
-        the name will be treated as the input data files and any with \"biomarkers\"
-        in the name will be treated as the biomarker data files."]
-         [:p "If you are getting permissions issues, note that you need to be
-        whitelisted as this app is currently not verified with Google. Please
-        contact kovas[dot]palunas[at]gmail.com if you want to be whitelisted."]
-         [:button {:id "authorize_button" :style {:display "none"}} "Authorize"]
-         [:button {:id "signout_button" :style {:display "none"}} "Sign Out"]
-         [:button {:on-click #(gd/populate-data!)}
-                  "Fetch Google Drive Data"]
-         [:pre "Found files " (str @gd/found-files)]
-
-         [:h4 "CSV"]
-         [:div.topbar.hidden-print "\"Upload\" input data"
-          [csv/upload-btn input-file-name csv/input-upload-reqs]]
-         [:div.topbar.hidden-print "\"Upload\" biomarker data"
-          [csv/upload-btn biomarker-file-name csv/biomarker-upload-reqs]]
-         [:br]
-         [:div "Input validation: " (get-validation-string input-data)]
-         [:div "Biomarker validation: " (get-validation-string biomarker-data)]
-         [:div "Cross data validation: " (get-all-data-validation-string
-                                           input-data biomarker-data)]
-
          (aggregation-section
            aggregation-granularity (keys data-by-aggregates))
 
