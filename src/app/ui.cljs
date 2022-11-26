@@ -3,7 +3,7 @@
     [app.specs :as specs]
     [reagent.core :as r]
     ["react-data-grid" :default DataGrid]
-    [app.csv :as csv]
+    [app.data-io.csv-export :refer [download-as-csv]]
     [clojure.string :as st]))
 
 
@@ -62,7 +62,7 @@
                                 (> v1 v2))))
                           %))))
         :rows (clj->js @sorted-rows)}]
-      [:button {:on-click #(csv/download-as-csv maps "data.csv")}
+      [:button {:on-click #(download-as-csv maps "data.csv")}
        "Download as CSV"]]))
 
 (maps-to-datagrid [{:test "v1" :test2 "v2"}])

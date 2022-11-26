@@ -1,6 +1,7 @@
 
 {:paths ["src"]
- :deps {io.github.kovasap/oz {:git/tag "vega-import-fix" :git/sha "4bf14e7"}
+ :deps {; io.github.kovasap/oz {:git/tag "vega-import-fix" :git/sha "4bf14e7"}
+        metasoarous/oz {:mvn/version "1.6.0-alpha36"}
         binaryage/devtools {:mvn/version "1.0.5"}
         nrepl/nrepl {:mvn/version "0.8.3"}
         cljs-http/cljs-http {:mvn/version "0.1.46"}
@@ -9,7 +10,7 @@
         metosin/spec-tools {:mvn/version "0.10.5"}
         metosin/malli {:git/url "https://github.com/metosin/malli.git"
                        :git/sha "005dfd2868518918b3b1b0ce83f51fbb6b1e4b37"}
-        kixi/stats {:mvn/version "0.5.4"}
+        kixi/stats {:mvn/version "0.5.5"}
         cider/cider-nrepl {:mvn/version "0.24.0"}
         org.clojars.frozenlock/reagent-table {:mvn/version "0.1.6"}
         com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}}
