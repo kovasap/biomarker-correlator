@@ -134,7 +134,7 @@
                     (single-var-table/make-hiccup sig-correlations)))]]))))
 
 
-(defn home-page [] [:div])
+(defn home-page [] [:div "hello world"])
 
 ;; -------------------------
 ;; Initialize app

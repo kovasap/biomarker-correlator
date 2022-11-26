@@ -143,10 +143,12 @@ https://github.com/mechatroner/rainbow_csv!
 Run the app:
 ```
 npm install
-clj -A:shadow-cljs watch app
+clj -M:shadow-cljs watch app
 npx webpack --entry ./target/index.js --output-path public/js/libs.js
-clj -A:shadow-cljs watch app
+clj -M:shadow-cljs watch app
 ```
+
+Then go to http://localhost:3000/index.html to see the build.
 
 Webpack is used because of https://github.com/thheller/shadow-cljs/issues/981
 
