@@ -43,7 +43,7 @@
                                [:raw-data timestamp]
                                #(merge % (get-event-data event))))))))
 
-(add-raw-data!
+(swap! data merge
   {:input-data
        [{:date     "1/1/00 to 2/1/00"
          :walks    2

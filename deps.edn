@@ -1,7 +1,10 @@
 
 {:paths ["src"]
- :deps {; io.github.kovasap/oz {:git/tag "vega-import-fix" :git/sha "4bf14e7"}
-        metasoarous/oz {:mvn/version "1.6.0-alpha36"}
+ :deps {
+        ; metasoarous/oz {:mvn/version "1.6.0-alpha36"}
+        ; Includes my https://github.com/metasoarous/oz/pull/187
+        metasoarous/oz {:git/url "https://github.com/metasoarous/oz.git"
+                        :git/sha "d5d490d21ea8d42740b09def2abab7c334d52520"}
         binaryage/devtools {:mvn/version "1.0.5"}
         nrepl/nrepl {:mvn/version "0.8.3"}
         cljs-http/cljs-http {:mvn/version "0.1.46"}
@@ -16,6 +19,5 @@
         com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}}
  :aliases
  {:shadow-cljs
-  ; {:extra-deps {thheller/shadow-cljs {:mvn/version "2.16.12"}}}
-  {:extra-deps {thheller/shadow-cljs {:mvn/version "2.20.12"}}
+  {:extra-deps {thheller/shadow-cljs {:mvn/version "2.27.5"}}
    :main-opts ["-m" "shadow.cljs.devtools.cli"]}}}
