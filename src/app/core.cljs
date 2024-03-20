@@ -75,10 +75,6 @@
             pairwise-correlations-for-table (stats/enliten pairwise-correlations)
             flat-results (map flatten-map pairwise-correlations-for-table)
             flat-results-atom (r/atom flat-results)]
-        (prn "INPUT DEBUG DATA")
-        (prn input-data)
-        (prn "INPUT PROCESSED DATA")
-        (prn processed-data)
         [:div.app.content
          [:h1.title "Biomarker Correlator"]
          [:p "This application calculates cross correlations between inputs and

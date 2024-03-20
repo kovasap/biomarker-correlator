@@ -3,7 +3,8 @@
 // Client ID and API key from the Developer Console
 // https://console.cloud.google.com/apis/credentials?project=biomarker-correlator
 var CLIENT_ID = '1071930237240-elt3e48qnnn155muu6iiqmtecius43ep.apps.googleusercontent.com';
-var API_KEY = 'AIzaSyAqhZ6Ar766JmnIQcd8kmcaquUADFyk_KU';
+// TODO get a new key and store it somewhere safe.
+var API_KEY = 'none';
 
 // Array of API discovery doc URLs for APIs used by the quickstart
 var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];

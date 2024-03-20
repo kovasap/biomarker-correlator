@@ -80,8 +80,33 @@
    "\"Upload\" biomarker data"
    [upload-btn @biomarker-filename biomarker-upload-reqs]])
 
+;; Correlation Adjustment data file
+
+(def adjustment-filename (r/atom ""))
+(def adjustment-upload-reqs (chan 1 first-file))
+(def adjustment-file-reads (chan 1 extract-result))
+
+(go-loop []
+  (let [reader (js/FileReader.)
+        file (<! adjustment-upload-reqs)]
+    (reset! adjustment-filename (.-name file))
+    (set! (.-onload reader) #(put! adjustment-file-reads %))
+    (.readAsText reader file)
+    (recur)))
+
+(go-loop []
+  (swap! data assoc :adjustment-data (<! adjustment-file-reads))
+  (recur))
+
+(defn adjustment-ui []
+  [:div.topbar.hidden-print
+   "\"Upload\" adjustment data"
+   [upload-btn @adjustment-filename adjustment-upload-reqs]])
+
+
 (defn csv-ui []
   [:div
    [:h4 "CSV"]
    [input-ui]
-   [biomarker-ui]])
+   [biomarker-ui]
+   [adjustment-ui]])
